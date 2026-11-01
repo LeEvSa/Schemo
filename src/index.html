@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:">
+  <title>Schémo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header id="toolbar"></header>
+    <main id="main">
+      <div id="stage">
+        <svg id="canvas" xmlns="http://www.w3.org/2000/svg" role="application" aria-label="Diagramme"></svg>
+        <div id="empty-hint"></div>
+        <div class="minimap-wrap"><canvas id="minimap" title="Vue d’ensemble — clique pour t’y rendre"></canvas></div>
+      </div>
+      <aside id="panel" aria-label="Propriétés"></aside>
+    </main>
+    <footer id="tabbar"></footer>
+  </div>
+  <div id="overlay-root"></div>
+  <script src="renderer.js"></script>
+</body>
+</html>

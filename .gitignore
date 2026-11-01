@@ -1,0 +1,7 @@
+node_modules/
+app/
+release/
+dist/
+test/shots/
+*.log
+CLAUDE.local.md
