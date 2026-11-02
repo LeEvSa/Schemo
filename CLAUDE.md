@@ -1,7 +1,7 @@
 # Schémo — notes pour Claude
 
 Application de bureau Windows (Electron) de diagrammes à rangement automatique, faite pour LeEvSa le 2026-10-29.
-Guide utilisateur : `README.md`. Dépôt GitHub **public** `LeEvSa/Schemo`, licence MIT. Notes propres à la machine de développement : `CLAUDE.local.md`,
+Guide utilisateur : `README.md` (anglais) et `README.fr.md` (français), à tenir à jour ensemble. **Tout ce qui paraît sur GitHub est en anglais par défaut** (règle demandée par LeEvSa le 2026-11-01) : description du dépôt, notes de release, `README.md`, `CHANGELOG.md`. Dépôt GitHub **public** `LeEvSa/Schemo`, licence MIT. Notes propres à la machine de développement : `CLAUDE.local.md`,
 hors Git. **Rien de personnel dans le dépôt** : ni adresse, ni chemin, ni réseau.
 
 ## Mises à jour

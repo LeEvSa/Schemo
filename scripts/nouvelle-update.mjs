@@ -23,4 +23,4 @@ const lock = read('package-lock.json');
 lock.version = version;
 lock.packages[''].version = version;
 write('package-lock.json', lock);
-console.log(`Mise à jour ${version.replace(/\.0$/, '')} : à décrire dans CHANGELOG.md.`);
+console.log(`Mise à jour ${version.replace(/\.0$/, '')} : à décrire dans CHANGELOG.md (en anglais).`);
