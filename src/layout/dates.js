@@ -18,7 +18,7 @@ const MONTHS = {
 const SEASONS = { printemps: 3, spring: 3, ete: 6, summer: 6, automne: 9, fall: 9, autumn: 9, hiver: 12, winter: 12 };
 
 const BCE = /\b(av\.?\s*j\.?\s*-?\s*c\.?|avant\s+j\.?\s*-?\s*c\.?|bce?)(?=\s|$)/;
-const TIME = /\b(\d{1,2})\s*[h:]\s*(\d{2})?(?!\d)/;
+const TIME = /\b(\d{1,2})\s*(?:h(?:eures?)?(?![a-z])|:)\s*(\d{2})?(?!\d)/;
 const SEPARATOR = /\s+(?:a|au|aux|jusqu'a|jusqu'au|jusqu'en|to|until|till|through|thru)\s+|\s*(?:->|→|[–—]|\.{2,}|…)\s*|\s+-\s+/;
 const NOW = /^(aujourd'?\s*hui|maintenant|present|nos jours|ce jour|now|today|\?)$/;
 
@@ -31,6 +31,7 @@ function read(text) {
   const c = { y: null, m: null, d: null, t: null, lastM: null, bare: false, bce: false };
   let s = text.replace(/(\d)t(\d)/, '$1 $2');
   s = s.replace(TIME, (m, h, min) => { c.t = +h * 60 + +(min || 0); return ' '; }).trim();
+  s = s.replace(/(\d)\s(\d{3})(?!\d)/g, '$1$2'); // 5 000 av. J.-C.
   if (BCE.test(s)) { c.bce = true; s = s.replace(BCE, ' ').trim(); }
   const year = (y) => (c.bce ? -Math.abs(y) : y);
   // 2026-03-15, 2026/03, 2026.03
@@ -42,6 +43,15 @@ function read(text) {
     c.y = m[3].length === 2 ? 2000 + +m[3] : +m[3];
     [c.m, c.d] = +m[2] > 12 ? [+m[1], +m[2]] : [+m[2], +m[1]];
     return c;
+  }
+  // 03/2026
+  m = /^(\d{1,2})[-/.](\d{4})$/.exec(s);
+  if (m && +m[1] >= 1 && +m[1] <= 12) { c.m = +m[1]; c.y = year(+m[2]); return c; }
+  // 15/03, et 03/15 quand le deuxième nombre ne peut pas être un mois
+  m = /^(\d{1,2})[-/.](\d{1,2})$/.exec(s);
+  if (m) {
+    const [mo, da] = +m[2] > 12 ? [+m[1], +m[2]] : [+m[2], +m[1]];
+    if (mo >= 1 && mo <= 12) { c.m = mo; c.d = da; return c; }
   }
   const yearIn = (str) => { const n = /-?\d{3,6}/.exec(str); return n ? year(+n[0]) : null; };
   // T1 2026, Q3 2026
@@ -58,7 +68,7 @@ function read(text) {
     const y = nums.find((n) => n > 31);
     const d = nums.find((n) => n >= 1 && n <= 31);
     c.m = month;
-    if (y !== undefined) c.y = year(y);
+    if (y !== undefined) c.y = year(y < 100 ? 1900 + y : y); // mai 68
     if (d !== undefined) c.d = d;
     return c;
   }

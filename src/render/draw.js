@@ -2,7 +2,6 @@
 import { tr } from '../i18n.js';
 import { shapePath } from './geometry.js';
 import { FONT, MONO, T } from '../layout/sizing.js';
-import { GT } from '../layout/engine.js';
 
 export const NS = 'http://www.w3.org/2000/svg';
 
@@ -87,7 +86,7 @@ export function fillCGroup(g, n, colors, title) {
   const t = el('text', { x: -n.w / 2 + 14, y: -3, 'font-size': 13.5, 'font-weight': 600, fill: colors.text }, g);
   t.textContent = title || tr('Cadre');
   const c = el('text', { x: -n.w / 2 + 14, y: 15, 'font-size': 11.5, fill: colors.text, opacity: 0.8 }, g);
-  c.textContent = `${n.count || 0} case${(n.count || 0) > 1 ? 's' : ''} — cadre replié`;
+  c.textContent = tr((n.count || 0) > 1 ? '{n} cases' : '{n} case', { n: n.count || 0 }) + tr(' — cadre replié');
 }
 
 export function chevron(parent, x, y, open, color, id) {
@@ -185,4 +184,3 @@ export function dashArray(dash, width) {
 }
 
 export const FONT_FAMILY = FONT;
-export const GROUP_TITLE_H = GT;

@@ -1,0 +1,4 @@
+# Fins de ligne identiques sous Windows et Linux (le dossier passe de l'un à l'autre, et bash refuse le CRLF).
+* text=auto eol=lf
+*.ico binary
+*.png binary

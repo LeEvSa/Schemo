@@ -14,9 +14,14 @@
 
 ## Installer
 
-Télécharger `Schemo.exe` dans les [Releases](https://github.com/LeEvSa/Schemo/releases), le copier où tu veux (Bureau, clé USB…) et double-cliquer. Rien à installer, ça marche sans Internet.
+Télécharger `Schemo-Setup.exe` dans les [Releases](https://github.com/LeEvSa/Schemo/releases) et double-cliquer, puis suivre les écrans : tu choisis le dossier d'installation (droits d'administrateur seulement pour un dossier protégé ou une installation pour tous les utilisateurs). Schémo crée un raccourci dans le menu Démarrer (celui du Bureau est une case à cocher au dernier écran), et tu peux l'épingler à la barre des tâches. Tes diagrammes n'ont pas besoin d'Internet.
+
+- **Mettre à jour :** au lancement, Schémo regarde sur GitHub s'il existe une nouvelle version (c'est sa seule connexion, et sans Internet il n'en dit rien) et te la propose. Tu peux aussi passer par Fichier → Rechercher une mise à jour. Rien ne s'installe sans ton accord.
+- **Désinstaller :** Paramètres de Windows → Applications, ou `Uninstall Schemo.exe` dans le dossier d'installation. Tes fichiers `.schemo` restent.
 Au premier lancement, Windows peut afficher « Windows a protégé votre ordinateur » (l'exe n'est pas signé) :
-cliquer **Informations complémentaires → Exécuter quand même**. Le démarrage prend quelques secondes (l'exe se décompresse à chaque lancement).
+cliquer **Informations complémentaires → Exécuter quand même**.
+
+Pour une clé USB ou un PC où tu ne veux rien installer : `Schemo.exe`, la version portable. Elle démarre plus lentement (elle se décompresse à chaque lancement), **ne s'épingle pas** à la barre des tâches (Windows épinglerait son dossier temporaire, qui disparaît) et ne se met pas à jour toute seule.
 
 ## Utiliser
 
@@ -33,7 +38,7 @@ cliquer **Informations complémentaires → Exécuter quand même**. Le démarra
 | Maj + glisser le fond | Sélectionner plusieurs cases |
 | Clic droit | Menu de la case, de la flèche, du cadre ou du fond |
 
-- **Menu Forme** (barre du haut ou panneau) : Automatique, Cycle, Hiérarchie, Processus, Liste, Pyramide, Carte d'idées — pour l'onglet entier ou un seul cadre.
+- **Menu Forme** (barre du haut ou panneau) : Automatique, Cycle, Hiérarchie, Processus, Liste, Pyramide, Carte d'idées, Chronologie — pour l'onglet entier ou un seul cadre.
 - **Cadres** (Ctrl+G) : regroupent des cases, s'ajustent seuls, se replient (chevron) pour alléger les gros diagrammes.
 - **Onglets** en bas comme Excel ; un fichier `.schemo` contient tous les onglets.
 - **Panneau de droite** : forme et couleur des cases, description (en Markdown), style des flèches (droite, courbe, angles, tirets, pointes, texte), thèmes de couleurs, espacement, sens de lecture.
@@ -47,7 +52,7 @@ cliquer **Informations complémentaires → Exécuter quand même**. Le démarra
 npm install
 npm test              # tests du moteur de disposition (node)
 npm start             # compile et lance (il faut un écran)
-npm run dist          # fabrique dist/Schemo.exe (Windows portable) depuis Linux
+npm run dist          # fabrique dist/Schemo-Setup.exe et dist/Schemo.exe (portable) depuis Linux
 ```
 
 Structure : `src/layout/` (moteur de rangement), `src/render/` (dessin SVG, flèches, thèmes, export),

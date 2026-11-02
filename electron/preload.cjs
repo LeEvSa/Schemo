@@ -22,6 +22,11 @@ contextBridge.exposeInMainWorld('schemo', {
   closeConfirmed: () => ipcRenderer.send('app:close-confirmed'),
   onRequestClose: (cb) => ipcRenderer.on('app:request-close', () => cb()),
   onOpenFile: (cb) => ipcRenderer.on('app:open-file', (e, p) => cb(p)),
+  updateSupported: () => ipcRenderer.invoke('update:supported'),
+  updateCheck: () => ipcRenderer.invoke('update:check'),
+  updateDownload: () => ipcRenderer.invoke('update:download'),
+  updateInstall: () => ipcRenderer.invoke('update:install'),
+  onUpdateProgress: (cb) => ipcRenderer.on('update:progress', (e, p) => cb(p)),
   pathForFile: (f) => { try { return webUtils.getPathForFile(f) || null; } catch { return null; } },
   platform: process.platform,
 });

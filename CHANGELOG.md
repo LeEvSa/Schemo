@@ -3,6 +3,13 @@
 Chaque mise à jour s'appelle **semaine.numéro** : `3.2` est la 2e mise à jour de la semaine 3.
 Les semaines sont des périodes de 7 jours comptées depuis la création de Schémo (semaine 1 = du 29 octobre au 4 novembre 2026).
 
+## 1.4 (2026-11-01)
+- **Vrai installateur** : `Schemo-Setup.exe` remplace `Installer-Schemo.cmd`. Tu choisis le dossier, Schémo s'épingle à la barre des tâches et se désinstalle depuis les Paramètres de Windows. Le raccourci sur le Bureau est une case à cocher au dernier écran.
+- **Mise à jour dans l'application** : Schémo propose les nouvelles versions au lancement, ou par Fichier → Rechercher une mise à jour. Si tu as une version plus ancienne, installe le Setup une fois à la main.
+- **Dates** : `03/2026`, `15/03`, `mai 68` et `5 000 av. J.-C.` sont maintenant bien classés.
+- Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+E, Ctrl+F et F1 marchent aussi quand le curseur est dans un champ du panneau.
+- Le texte des cadres repliés suit la langue choisie.
+
 ## 1.3 (2026-11-01)
 - **Chronologie** : nouvelle forme, et « Nouvelle fiche chronologique » dans le menu Fichier. Les cases suivent une ligne du temps et se classent
   toutes seules selon leur date, écrite librement (2026-03-15, mars 2026, T1 2026, 1967, Jour 3…). Horizontale ou verticale.

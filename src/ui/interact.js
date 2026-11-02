@@ -303,11 +303,13 @@ export class Interact {
   key(e) {
     const app = this.app;
     const tgt = e.target;
-    if (tgt && tgt.closest && tgt.closest('input, textarea, select, [contenteditable="true"]')) return;
     if (document.querySelector('.modal-wrap')) return;
     const ctrl = e.ctrlKey || e.metaKey;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     const stop = () => { e.preventDefault(); e.stopPropagation(); };
+    // dans un champ, seuls les raccourcis qui ne touchent pas au texte restent actifs
+    const typing = tgt && tgt.closest && tgt.closest('input, textarea, select, [contenteditable="true"]');
+    if (typing && !(k === 'F1' || (ctrl && ['s', 'o', 'n', 'e', 'f'].includes(k)))) return;
     if (e.key === ' ' && !ctrl) { this.space = true; this.svg.classList.add('space'); stop(); return; }
     if (ctrl) {
       if (k === 'z' && !e.shiftKey) { stop(); app.undo(); return; }

@@ -40,6 +40,14 @@ export function toast(msg, kind = '') {
   setTimeout(() => { t.classList.remove('in'); setTimeout(() => t.remove(), 300); }, kind === 'error' ? 5000 : 2200);
 }
 
+// Notification qui reste affichée jusqu'à close() ; set() change son texte.
+export function stickyToast(msg) {
+  const t = h('div', { class: 'toast' }, msg);
+  getRoot().appendChild(t);
+  requestAnimationFrame(() => t.classList.add('in'));
+  return { set: (m) => { t.textContent = m; }, close: () => { t.classList.remove('in'); setTimeout(() => t.remove(), 300); } };
+}
+
 let openMenu = null;
 
 export function closeMenu() {

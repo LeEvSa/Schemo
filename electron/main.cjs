@@ -5,6 +5,7 @@ const fs = require('node:fs');
 
 const TEST_DIR = process.env.SCHEMO_TEST_DIR || null; // tests automatiques : pas de boîtes de dialogue
 if (process.env.SCHEMO_USER_DATA) app.setPath('userData', process.env.SCHEMO_USER_DATA);
+app.setAppUserModelId('ca.leevsa.schemo'); // Windows : la fenêtre se range sous le raccourci épinglé (même valeur que appId)
 let win = null;
 let dirty = false;
 let forceClose = false;
@@ -268,3 +269,32 @@ ipcMain.handle('app:startupFile', async () => { const f = pendingFile; pendingFi
 ipcMain.on('app:dirty', (e, d) => { dirty = !!d; if (win) win.setDocumentEdited(!!d); });
 ipcMain.on('app:title', (e, t) => { if (win) win.setTitle(String(t)); });
 ipcMain.on('app:close-confirmed', () => { forceClose = true; if (win) win.close(); });
+
+// ---------- mises à jour (depuis les Releases GitHub) ----------
+// Version installée seulement : le portable ne peut pas se remplacer lui-même. SCHEMO_UPDATE_TEST : tests, jamais d'installation.
+const canUpdate = (app.isPackaged && !process.env.PORTABLE_EXECUTABLE_FILE) || !!process.env.SCHEMO_UPDATE_TEST;
+let updater = null;
+function getUpdater() {
+  if (updater) return updater;
+  ({ autoUpdater: updater } = require('electron-updater'));
+  updater.autoDownload = false;
+  updater.autoInstallOnAppQuit = app.isPackaged;
+  updater.forceDevUpdateConfig = !app.isPackaged;
+  updater.on('error', (err) => console.error(err)); // sans écouteur, l'erreur ferait planter l'application
+  updater.on('download-progress', (p) => { if (win) win.webContents.send('update:progress', Math.round(p.percent)); });
+  return updater;
+}
+
+ipcMain.handle('update:supported', async () => canUpdate);
+// Rend le numéro de la mise à jour disponible, ou null.
+ipcMain.handle('update:check', async () => {
+  if (!canUpdate) return null;
+  const r = await getUpdater().checkForUpdates();
+  return r && r.isUpdateAvailable ? r.updateInfo.version.replace(/\.0$/, '') : null;
+});
+ipcMain.handle('update:download', async () => { await getUpdater().downloadUpdate(); });
+ipcMain.handle('update:install', async () => {
+  if (!app.isPackaged) return;
+  forceClose = true;
+  getUpdater().quitAndInstall(true, true); // sans écrans (même dossier, mêmes raccourcis), puis Schémo se rouvre
+});

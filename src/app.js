@@ -12,7 +12,7 @@ import { buildSVG, svgToPngBase64 } from './render/export.js';
 import { THEMES, SWATCHES } from './render/themes.js';
 import { handleActions, frameHandles } from './ui/handles.js';
 import { h, icon } from './ui/dom.js';
-import { showModal, toast, showMenu } from './ui/dialogs.js';
+import { showModal, toast, stickyToast, showMenu } from './ui/dialogs.js';
 import { Panel, SHAPE_LABELS, LAYOUT_LABELS, MARKDOWN_HELP } from './ui/panel.js';
 import { TabBar } from './ui/tabs.js';
 import { Minimap } from './ui/minimap.js';
@@ -67,6 +67,7 @@ class App {
     new ResizeObserver(() => { this.renderer.requestFrame(); this.minimap.invalidate(); }).observe(this.$.stage);
     io.onRequestClose(async () => { if (await this.confirmDiscard()) { await io.recoveryClear(); io.closeConfirmed(); } });
     io.onOpenFile((p) => this.openPath(p));
+    io.onUpdateProgress((p) => { if (this.updateToast) this.updateToast.set(tr('Téléchargement de la mise à jour : {n} %', { n: p })); });
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.applyMode());
     window.addEventListener('beforeunload', (e) => { if (!isDesktop && this.dirty) { e.preventDefault(); e.returnValue = ''; } });
     setInterval(() => this.autosave(), 20000);
@@ -85,6 +86,8 @@ class App {
     this.panel.render();
     await this.relayout({ animate: false });
     this.restoreView();
+    this.canUpdate = await io.updateSupported();
+    setTimeout(() => this.checkUpdate(), 5000);
     const startup = await io.startupFile();
     const rec = await io.recoveryLoad();
     if (rec) {
@@ -679,7 +682,6 @@ class App {
     const r = this.buildClip();
     if (!r) return false;
     const { clip, ids } = r;
-    this.lastClip = clip;
     io.clipboardWrite(JSON.stringify(clip));
     if (cut) {
       this.change((t) => deleteItems(t, [...ids], true));
@@ -935,6 +937,46 @@ class App {
     await this.loadDoc(exampleDoc(), null, tr('Exemples'));
   }
 
+  // ---------- mise à jour ----------
+  // Au lancement, rien n'est dit s'il n'y a pas de mise à jour ou pas d'Internet ; depuis le menu, on répond toujours.
+  async checkUpdate(manual = false) {
+    if (!this.canUpdate || this.updating) return;
+    let version;
+    try { version = await io.updateCheck(); } catch (err) {
+      console.error(err);
+      if (manual) toast(tr('Impossible de vérifier les mises à jour. Es-tu connecté à Internet ?'), 'error');
+      return;
+    }
+    if (!version) { if (manual) toast(tr('Schémo est à jour.')); return; }
+    if (!manual && document.querySelector('.modal-wrap')) return;
+    const yes = await showModal({
+      title: tr('Mise à jour disponible'),
+      body: tr('La mise à jour {version} de Schémo est disponible. Veux-tu la télécharger ?', { version }),
+      buttons: [{ label: tr('Plus tard'), value: false }, { label: tr('Télécharger'), value: true, kind: 'primary' }],
+    });
+    if (!yes) return;
+    this.updating = true;
+    this.updateToast = stickyToast(tr('Téléchargement de la mise à jour…'));
+    try { await io.updateDownload(); } catch (err) {
+      console.error(err);
+      toast(tr('Le téléchargement de la mise à jour a échoué.'), 'error');
+      this.updating = false;
+      return;
+    } finally {
+      this.updateToast.close();
+      this.updateToast = null;
+    }
+    const now = await showModal({
+      title: tr('Mise à jour prête'),
+      body: tr('Schémo va se fermer, s’installer, puis se rouvrir. Si tu choisis plus tard, elle s’installera à la fermeture de Schémo.'),
+      buttons: [{ label: tr('Plus tard'), value: false }, { label: tr('Installer maintenant'), value: true, kind: 'primary' }],
+    });
+    if (now && await this.confirmDiscard()) {
+      await io.recoveryClear();
+      await io.updateInstall();
+    }
+  }
+
   // ---------- export ----------
   async layoutForTab(tab) {
     if (tab.id === this.tab.id && this.L) return this.L;
@@ -1081,6 +1123,7 @@ class App {
       { sep: true },
       { label: tr('Ouvrir les exemples'), icon: 'sparkle', action: () => this.openExample() },
       { label: tr('Aide et raccourcis'), icon: 'help', shortcut: 'F1', action: () => this.showHelp() },
+      this.canUpdate ? { label: tr('Rechercher une mise à jour…'), icon: 'export', action: () => this.checkUpdate(true) } : null,
       { label: 'Langue · Language', icon: 'globe', submenu: LANGS.map(([l, label]) => ({ label, checked: getLang() === l, action: () => this.setLanguage(l) })) },
       { sep: true },
       { heading: tr('Mise à jour {version}', { version: VERSION }) },

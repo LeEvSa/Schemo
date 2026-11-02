@@ -92,6 +92,21 @@ const EN = {
   'Sorti du cadre': 'Taken out of the frame',
   'Sélectionne d’abord des cases (Ctrl+clic ou Maj+glisser).': 'Select some boxes first (Ctrl+click or Shift+drag).',
 
+  // ---------- mise à jour ----------
+  'Rechercher une mise à jour…': 'Check for updates…',
+  'Schémo est à jour.': 'Schémo is up to date.',
+  'Impossible de vérifier les mises à jour. Es-tu connecté à Internet ?': 'Could not check for updates. Are you connected to the Internet?',
+  'Mise à jour disponible': 'Update available',
+  'La mise à jour {version} de Schémo est disponible. Veux-tu la télécharger ?': 'Schémo update {version} is available. Do you want to download it?',
+  'Plus tard': 'Later',
+  'Télécharger': 'Download',
+  'Téléchargement de la mise à jour…': 'Downloading the update…',
+  'Téléchargement de la mise à jour : {n} %': 'Downloading the update: {n}%',
+  'Le téléchargement de la mise à jour a échoué.': 'The update could not be downloaded.',
+  'Mise à jour prête': 'Update ready',
+  'Schémo va se fermer, s’installer, puis se rouvrir. Si tu choisis plus tard, elle s’installera à la fermeture de Schémo.': 'Schémo will close, install it, then reopen. If you choose later, it will install when you close Schémo.',
+  'Installer maintenant': 'Install now',
+
   // ---------- export ----------
   'Format': 'Format',
   'Image PNG': 'PNG image',
@@ -408,6 +423,7 @@ const EN = {
   'Ajouter un élément après — glisser pour relier': 'Add an item after — drag to link',
   'Ajouter un élément avant — glisser pour relier': 'Add an item before — drag to link',
   'Case épinglée — cliquer pour la relâcher': 'Pinned box — click to release',
+  ' — cadre replié': ' — collapsed frame',
 
   // ---------- exemples ----------
   'Cycle (ton exemple)': 'Cycle (your example)',

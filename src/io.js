@@ -78,6 +78,11 @@ export const io = {
     if (api) return api.clipboardRead();
     try { return await navigator.clipboard.readText(); } catch { return memClip; }
   },
+  async updateSupported() { return api ? api.updateSupported() : false; },
+  async updateCheck() { return api ? api.updateCheck() : null; },
+  async updateDownload() { if (api) return api.updateDownload(); },
+  async updateInstall() { if (api) return api.updateInstall(); },
+  onUpdateProgress(cb) { if (api) api.onUpdateProgress(cb); },
   async prefsGet() {
     if (api) return api.prefsGet();
     try { return JSON.parse(localStorage.getItem('schemo-prefs') || '{}'); } catch { return {}; }

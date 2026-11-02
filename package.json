@@ -1,6 +1,6 @@
 {
   "name": "schemo",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Schémo — diagrammes qui se rangent tout seuls",
   "main": "electron/main.cjs",
   "scripts": {
@@ -14,6 +14,9 @@
   "author": "LeEvSa",
   "license": "MIT",
   "type": "module",
+  "dependencies": {
+    "electron-updater": "^6.8.11"
+  },
   "devDependencies": {
     "electron": "^45.1.0",
     "electron-builder": "^26.18.0",
@@ -26,6 +29,13 @@
     "appId": "ca.leevsa.schemo",
     "productName": "Schemo",
     "copyright": "LeEvSa",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "LeEvSa",
+        "repo": "Schemo"
+      }
+    ],
     "directories": {
       "output": "release",
       "buildResources": "assets"
@@ -47,6 +57,12 @@
     "win": {
       "target": [
         {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
           "target": "portable",
           "arch": [
             "x64"
@@ -58,6 +74,20 @@
     },
     "portable": {
       "artifactName": "Schemo.exe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "Schemo-Setup.exe",
+      "shortcutName": "Schémo",
+      "installerLanguages": [
+        "en_US",
+        "fr_FR"
+      ],
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "runAfterFinish": true
     },
     "extraMetadata": {
       "main": "electron/main.cjs"

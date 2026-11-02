@@ -87,17 +87,22 @@ await run('deux cycles reliés', { nodes: ['a1', 'a2', 'a3', 'b1', 'b2', 'b3'], 
 
 await run('cases isolées', { nodes: ['x', 'y', 'z'] });
 
+const framed = {};
 await run('cadres', { nodes: ['p1', 'p2', 'p3', 'q1', 'q2', 'r'], edges: [['p1', 'p2'], ['p2', 'p3'], ['q1', 'q2'], ['p3', 'q1'], ['r', 'p1']],
   setup: (t, ids) => {
     const g1 = createGroup(t, { title: 'Phase 1' }), g2 = createGroup(t, { title: 'Phase 2' });
     t.nodes[ids.p1].group = g1.id; t.nodes[ids.p2].group = g1.id; t.nodes[ids.p3].group = g1.id;
     t.nodes[ids.q1].group = g2.id; t.nodes[ids.q2].group = g2.id;
+    framed[g1.id] = ['p1', 'p2', 'p3'];
+    framed[g2.id] = ['q1', 'q2'];
   } },
-  (L) => {
+  (L, ids) => {
     check(L.groups.size === 2, 'deux cadres');
-    for (const g of L.groups.values()) {
-      for (const n of L.nodes.values()) {
-        // les cases de ce cadre doivent être dedans
+    for (const [gid, names] of Object.entries(framed)) {
+      const g = L.groups.get(gid);
+      for (const nm of names) {
+        const n = L.nodes.get(ids[nm]);
+        check(n.x - n.w / 2 >= g.x && n.x + n.w / 2 <= g.x + g.w && n.y - n.h / 2 >= g.y && n.y + n.h / 2 <= g.y + g.h, `${nm} dans son cadre`);
       }
     }
   });
@@ -175,6 +180,16 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   // ce qui ne doit surtout pas devenir une période
   for (const one of ['2026-03', '2026-03-15', '2000-10', 'mars 2026', '1967', '15 mars 2026', 'T1 2026', '500 av. J.-C.', 'Sept. 2026', '2026-03-15 14:30']) check(parseSpan(one) && parseSpan(one).end === null, `date simple : « ${one} » : ${JSON.stringify(parseSpan(one))}`);
   for (const none of ['il y a longtemps', 'une date à la main', 'de temps en temps']) check(parseSpan(none) === null, `pas une date : « ${none} »`);
+  // mois/année, jour/mois, année à deux chiffres, milliers avec une espace, heures
+  check(parseDate('03/2026') === parseDate('mars 2026') && parseDate('3/2026') === parseDate('mars 2026'), 'mois/année');
+  for (const [a, b] of [['12/2025', '01/2026'], ['1967', '03/2026'], ['15/03', '16/03'], ['31/01', '01/02'], ['5 000 av. J.-C.', '500 av. J.-C.']]) earlier(a, b);
+  const q = parseSpan('03/2026 à 06/2026');
+  check(q && q.start === K(2026, 3) && Math.floor(q.end) === K(2026, 6, 31), 'période mois/année : ' + JSON.stringify(q));
+  check(parseDate('03/15') === parseDate('15/03'), 'mois/jour quand le 2e nombre n\'est pas un mois');
+  check(parseDate('mai 68') === parseDate('mai 1968'), 'année à deux chiffres');
+  check(parseDate('5 000 av. J.-C.') === parseDate('5000 av. J.-C.'), 'milliers avec une espace');
+  check(parseDate('8 hommes') === parseDate('8'), 'un mot en h n\'est pas une heure');
+  check(parseDate('10 heures 30') === parseDate('10h30') && parseDate('10 heures') === parseDate('10h'), 'heures écrites en toutes lettres');
   const ord = (list) => chronoOrder(list.map((_, i) => i), (i) => list[i]).map((i) => list[i]).join('|');
   check(ord(['de 2000 à 2010', '2005', '1999', 'de 2000 à 2003']) === '1999|de 2000 à 2003|de 2000 à 2010|2005', 'périodes : par début puis fin : ' + ord(['de 2000 à 2010', '2005', '1999', 'de 2000 à 2003']));
   const order = (list) => chronoOrder(list.map((_, i) => i), (i) => list[i]).map((i) => list[i]).join('|');

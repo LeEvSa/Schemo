@@ -6,7 +6,7 @@ hors Git. **Rien de personnel dans le dépôt** : ni adresse, ni chemin, ni rés
 
 ## Mises à jour
 Nom : **semaine.numéro** (règle demandée par LeEvSa le 2026-11-01). Semaines de 7 jours depuis la création : semaine 1 = 29 oct. au 4 nov. 2026.
-Pour chaque mise à jour : `npm run nouvelle-update` (met le numéro dans `package.json`), l'écrire dans `CHANGELOG.md`, puis `npm run dist`. Publier : commit, `git push`, puis `gh release create <numéro> dist/Schemo.exe dist/Installer-Schemo.cmd`.
+Pour chaque mise à jour : `npm run nouvelle-update` (met le numéro dans `package.json`), l'écrire dans `CHANGELOG.md`, puis `npm run dist`. Publier : commit, `git push`, puis `gh release create <numéro> dist/Schemo-Setup.exe dist/Schemo-Setup.exe.blockmap dist/latest.yml dist/Schemo.exe`. **`latest.yml` est indispensable** : sans lui, la mise à jour dans l'app (electron-updater, `main.cjs`) ne trouve rien.
 
 ## Ce que LeEvSa a demandé (questionnaire du 2026-10-29)
 - Saisie **à la souris seulement** (pas de panneau texte ni de phrases rapides).
@@ -17,12 +17,12 @@ Pour chaque mise à jour : `npm run nouvelle-update` (met le numéro dans `packa
 - Cases **uniformes** façon SmartArt (texte qui passe à la ligne puis rapetisse).
 - Description en Markdown sous le titre (a remplacé les sous-points le 2026-11-01), couleur par case, formes variées ; flèches : texte, style auto selon la forme, style au choix, sans pointe / double.
 - Usage : procédures, organigrammes, planification, idées / univers. Diagrammes de 60 à 200+ cases.
-- Export PNG, PDF, SVG. Sens « mixte » (hiérarchie ↓, processus →). Onglets. Cadres. Un seul .exe portable.
+- Export PNG, PDF, SVG. Sens « mixte » (hiérarchie ↓, processus →). Onglets. Cadres. Un seul .exe portable (le 2026-11-01, LeEvSa a demandé de pouvoir l'épingler à la barre des tâches : l'installateur est devenu la version principale).
 
 ## Commandes
 - `npm test` : tests du moteur (`test/layout.test.mjs`, node, mesure du texte approximative).
 - `node scripts/build.mjs [--prod]` : assemble l'interface dans `app/` (esbuild, ELK inclus).
-- `npm run dist` (= `scripts/package-win.sh`) : fabrique `dist/Schemo.exe` (electron-builder, cible portable x64).
+- `npm run dist` (= `scripts/package-win.sh`) : fabrique `dist/Schemo-Setup.exe` (electron-builder, assistant NSIS avec choix du dossier) et `dist/Schemo.exe` (portable x64).
   Le travail se fait dans `~/.cache/schemo-build` ; préfixe wine `~/.wine-schemo`.
 - Tests visuels dans Electron (serveur sans écran) :
   `SCHEMO_TEST_DIR=<dossier> xvfb-run -a -s "-screen 0 1600x1000x24" node test/visual.mjs <dossier-captures> [scenario.mjs]`
@@ -31,8 +31,8 @@ Pour chaque mise à jour : `npm run nouvelle-update` (met le numéro dans `packa
   `visual.mjs` donne un `userData` temporaire (sinon la sauvegarde de secours d'un test précédent bloque le démarrage).
   `window.__schemo` = l'objet App (accès pour les tests).
 - L'exe ne démarre pas sous wine 10 (Electron 45) : impossible de le tester ici, le code est le même que sous Linux.
-- `dist/Installer-Schemo.cmd` (source : `scripts/Installer-Schemo.cmd`) copie l'exe dans
-  `%LOCALAPPDATA%\Programs\Schemo`, crée le raccourci « Schémo » sur le bureau et lance l'app ; à relancer pour mettre à jour.
+- `Schemo-Setup.exe` propose `%LOCALAPPDATA%\Programs\schemo` (dossier modifiable) et crée le raccourci « Schémo » du menu Démarrer ; celui du Bureau est une case décochée au dernier écran (`assets/installer.nsh`, langues français et anglais). À relancer pour mettre à jour. Le portable se décompresse dans
+  un dossier temporaire à chaque lancement : Windows ne peut pas l'épingler. `main.cjs` fixe `setAppUserModelId` à la valeur de `appId` pour que la fenêtre se range sous le raccourci.
 
 ## Architecture
 - `src/model.js` : document `{tabs:[{nodes, edges, groups, settings, positions, view}]}`. Ids préfixés `n`/`e`/`g`/`t`.
