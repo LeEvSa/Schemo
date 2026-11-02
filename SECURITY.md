@@ -17,5 +17,5 @@ Please include the Schémo version, what can happen, and the steps to reproduce 
 ## What to expect
 
 - The executables are **not code-signed**, so Windows may warn you when you run them. Download them only from this repository's Releases.
-- The installed version checks this repository's Releases for updates when it starts, and installs nothing without your approval. It makes no other network connections.
+- The installed version checks this repository's Releases for updates when it starts, and installs nothing without your approval. Schémo's own code makes no other network connections and never sends your diagrams anywhere. Electron's built-in spell checker may download dictionaries.
 - Diagrams (`.schemo` files) are read as data: text in a diagram can't run code, and links in descriptions don't open.

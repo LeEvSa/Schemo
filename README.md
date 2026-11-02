@@ -16,7 +16,7 @@ A diagram editor for Windows, somewhere between draw.io and Excel's SmartArt: yo
 
 Download `Schemo-Setup.exe` from the [Releases](https://github.com/LeEvSa/Schemo/releases), double-click it and follow the screens. You choose the install folder (administrator rights are only needed for a protected folder or an install for all users). Schémo adds a Start menu shortcut (the desktop shortcut is a checkbox on the last screen), and you can pin it to the taskbar. Your diagrams don't need the Internet.
 
-- **Update:** when it starts, Schémo checks GitHub for a new version and offers it to you. That is its only connection, and without Internet it says nothing. You can also use File → Check for updates. Nothing installs without your approval.
+- **Update:** when it starts, Schémo checks GitHub for a new version and offers it to you. Without Internet it says nothing. Your diagrams are never sent anywhere (see [SECURITY.md](SECURITY.md)). You can also use File → Check for updates. Nothing installs without your approval.
 - **Uninstall:** Windows Settings → Apps, or `Uninstall Schemo.exe` in the install folder. Your `.schemo` files stay.
 
 The first time, Windows may show "Windows protected your PC" (the exe is not signed):

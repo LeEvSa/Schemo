@@ -18,7 +18,7 @@
 
 Télécharger `Schemo-Setup.exe` dans les [Releases](https://github.com/LeEvSa/Schemo/releases) et double-cliquer, puis suivre les écrans : tu choisis le dossier d'installation (droits d'administrateur seulement pour un dossier protégé ou une installation pour tous les utilisateurs). Schémo crée un raccourci dans le menu Démarrer (celui du Bureau est une case à cocher au dernier écran), et tu peux l'épingler à la barre des tâches. Tes diagrammes n'ont pas besoin d'Internet.
 
-- **Mettre à jour :** au lancement, Schémo regarde sur GitHub s'il existe une nouvelle version (c'est sa seule connexion, et sans Internet il n'en dit rien) et te la propose. Tu peux aussi passer par Fichier → Rechercher une mise à jour. Rien ne s'installe sans ton accord.
+- **Mettre à jour :** au lancement, Schémo regarde sur GitHub s'il existe une nouvelle version et te la propose. Sans Internet, il n'en dit rien. Tes diagrammes ne sont jamais envoyés nulle part (voir [SECURITY.md](SECURITY.md), en anglais). Tu peux aussi passer par Fichier → Rechercher une mise à jour. Rien ne s'installe sans ton accord.
 - **Désinstaller :** Paramètres de Windows → Applications, ou `Uninstall Schemo.exe` dans le dossier d'installation. Tes fichiers `.schemo` restent.
 
 Au premier lancement, Windows peut afficher « Windows a protégé votre ordinateur » (l'exe n'est pas signé) :
