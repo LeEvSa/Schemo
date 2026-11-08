@@ -45,6 +45,7 @@ For a USB key or a PC where you don't want to install anything: `Schemo.exe`, th
 - **Right panel**: box shape and color, description (in Markdown), arrow style (straight, curved, right angles, dashes, heads, text), color themes, spacing, reading direction.
 - **Export** (Ctrl+E): PNG (white or transparent background, high resolution), PDF (fitted page or Letter/Legal/Tabloid, one or all tabs), SVG.
 - Shortcuts: Ctrl+Z/Y, Ctrl+C/X/V/D, Del, F2, Ctrl+A, Ctrl+F, Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+0, F1 (help).
+- Open, Save as and Export each remember the last folder you used. Save as starts in the diagram's own folder when it already has a file.
 - Automatic backup: if Schémo closes without saving, it offers to recover your work at the next launch.
 
 ## Language
@@ -59,6 +60,7 @@ Globe button (FR / EN) at the top right, or File → "Langue · Language". The c
   - *Colorful, Pastel, Night*: the 8 palette colors.
   - *All boxes*: text and border color. "Remove per-box colors" puts boxes back on the tab's colors.
 - **A box or a selection**: solid color or gradient, text color, border color.
+- **+ (Other color)** or a color dot opens the color picker: HEX code by default, or RGB / HSL. Schémo remembers the mode you chose and your recent colors. Enter or a click elsewhere keeps the color; Esc goes back to the starting color.
 
 ## Description
 

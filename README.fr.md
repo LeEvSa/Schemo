@@ -47,6 +47,7 @@ Pour une clé USB ou un PC où tu ne veux rien installer : `Schemo.exe`, la vers
 - **Panneau de droite** : forme et couleur des cases, description (en Markdown), style des flèches (droite, courbe, angles, tirets, pointes, texte), thèmes de couleurs, espacement, sens de lecture.
 - **Export** (Ctrl+E) : PNG (fond blanc ou transparent, haute résolution), PDF (page ajustée ou Lettre/Légal/Tabloïd, un ou tous les onglets), SVG.
 - Raccourcis : Ctrl+Z/Y, Ctrl+C/X/V/D, Suppr, F2, Ctrl+A, Ctrl+F, Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+0, F1 (aide).
+- Ouvrir, Enregistrer sous et Exporter retiennent chacun le dernier dossier utilisé. Enregistrer sous part du dossier du diagramme quand il a déjà un fichier.
 - Sauvegarde de secours automatique : si Schémo se ferme sans enregistrer, il propose de récupérer le travail au prochain lancement.
 
 ## Développement
@@ -73,6 +74,7 @@ Globe button (FR / EN) at the top right, or File → “Langue · Language”. T
   - *Coloré, Pastel, Nuit* : les 8 couleurs de la palette.
   - *Toutes les cases* : couleur du texte et de la bordure. « Enlever les couleurs case par case » remet les cases sur les couleurs de l'onglet.
 - **Une case ou une sélection** : couleur unie ou dégradé, couleur du texte, couleur de la bordure.
+- **+ (Autre couleur)** ou une pastille ouvre le sélecteur de couleur : code HEX par défaut, ou RGB / HSL. Schémo retient le mode choisi et les couleurs récentes. Entrée ou un clic ailleurs garde la couleur ; Échap revient à celle de départ.
 
 ## Description
 Sous son titre, une case peut avoir une description écrite en Markdown (panneau de droite, ou Maj+Entrée dans la case) :

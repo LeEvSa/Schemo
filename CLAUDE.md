@@ -68,7 +68,11 @@ Pour chaque mise à jour : `npm run nouvelle-update` (met le numéro dans `packa
   dégradé, `palette` de Coloré/Pastel/Nuit, `text`/`border` de toutes les cases) ; sur la case : `color`, `color2` (dégradé),
   `gradDir`, `textColor`, `borderColor`. `nodeColors(settings, ctx, case)` rend `{fill, stroke, text, grad?}` ; `fill` reste une
   couleur unie (mini-carte, texte) et `fillPaint` crée le `<linearGradient>` au besoin (écran et export). Modifier une couleur :
-  `app.setTabColors` / `app.setNodeColors`, sans refaire la disposition (`recolor`). `panel.colorInput` : un glisser dans le
-  sélecteur natif = une seule étape d'annulation.
+  `app.setTabColors` / `app.setNodeColors`, sans refaire la disposition (`recolor`). Sélecteur de couleur
+  maison `ui/colorpicker.js` (2026-11-07, celui de Chromium ouvre toujours en RGB) : HEX par défaut, mode (`colorMode`) et
+  couleurs récentes (`recentColors`) gardés dans `prefs.json`. `panel.pickColor` : tout le passage dans le sélecteur = une
+  seule étape d'annulation ; Échap revient à la couleur de départ.
 - `electron/main.cjs` : un seul exemplaire (verrou), fichiers `.schemo` (JSON), PDF par `printToPDF` d'une fenêtre cachée,
   sauvegarde de secours `recuperation.json` dans userData, préférences, fenêtre.
+  Ouvrir / Enregistrer sous / Exporter retiennent chacun leur dossier (`openDir`, `saveDir`, `exportDir` de `prefs.json`, 2026-11-07) ;
+  « Enregistrer sous » part du dossier du fichier ouvert s'il y en a un.

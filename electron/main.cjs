@@ -130,10 +130,20 @@ if (!gotLock) {
 // ---------- échanges avec l'interface ----------
 const filters = () => [{ name: tr('Diagramme Schémo'), extensions: ['schemo'] }];
 
+// Chaque boîte de dialogue retient son dernier dossier (prefs.json : openDir, saveDir, exportDir), Documents sinon.
+function lastDir(key) {
+  const d = readJSON('prefs.json', {})[key];
+  return d && fs.existsSync(d) ? d : app.getPath('documents');
+}
+function rememberDir(key, p) {
+  writeJSON('prefs.json', { ...readJSON('prefs.json', {}), [key]: path.dirname(p) });
+}
+
 ipcMain.handle('file:openDialog', async () => {
-  const r = await dialog.showOpenDialog(win, { title: tr('Ouvrir un diagramme'), filters: filters(), properties: ['openFile'] });
+  const r = await dialog.showOpenDialog(win, { title: tr('Ouvrir un diagramme'), defaultPath: lastDir('openDir'), filters: filters(), properties: ['openFile'] });
   if (r.canceled || !r.filePaths[0]) return null;
   const p = r.filePaths[0];
+  rememberDir('openDir', p);
   const content = fs.readFileSync(p, 'utf8');
   addRecent(p);
   return { path: p, name: path.basename(p), content };
@@ -174,11 +184,14 @@ ipcMain.handle('file:save', async (e, p, content) => {
   return p;
 });
 
-ipcMain.handle('file:saveAs', async (e, content, name) => {
-  const r = TEST_DIR ? { filePath: path.join(TEST_DIR, name || tr('Diagramme') + '.schemo') } : await dialog.showSaveDialog(win, { title: tr('Enregistrer le diagramme'), defaultPath: name || tr('Diagramme') + '.schemo', filters: filters() });
+// current : fichier du diagramme ouvert ; « Enregistrer sous » part de son dossier, sinon du dernier dossier d'enregistrement.
+ipcMain.handle('file:saveAs', async (e, content, name, current) => {
+  const dir = current && path.isAbsolute(current) && fs.existsSync(path.dirname(current)) ? path.dirname(current) : lastDir('saveDir');
+  const r = TEST_DIR ? { filePath: path.join(TEST_DIR, name || tr('Diagramme') + '.schemo') } : await dialog.showSaveDialog(win, { title: tr('Enregistrer le diagramme'), defaultPath: path.join(dir, name || tr('Diagramme') + '.schemo'), filters: filters() });
   if (r.canceled || !r.filePath) return null;
   let p = r.filePath;
   if (!/\.schemo$/i.test(p)) p += '.schemo';
+  if (!TEST_DIR) rememberDir('saveDir', p);
   writeSafely(p, content, 'utf8');
   addRecent(p);
   return p;
@@ -188,18 +201,15 @@ const EXPORT_FILTERS = { png: 'Image PNG', svg: 'Image SVG', pdf: 'Document PDF'
 
 async function askExportPath(ext, name) {
   if (TEST_DIR) return path.join(TEST_DIR, `${name}.${ext}`);
-  const last = readJSON('prefs.json', {}).exportDir;
   const r = await dialog.showSaveDialog(win, {
     title: tr('Exporter'),
-    defaultPath: path.join(last && fs.existsSync(last) ? last : app.getPath('documents'), `${name}.${ext}`),
+    defaultPath: path.join(lastDir('exportDir'), `${name}.${ext}`),
     filters: [{ name: tr(EXPORT_FILTERS[ext]), extensions: [ext] }],
   });
   if (r.canceled || !r.filePath) return null;
   let p = r.filePath;
   if (!p.toLowerCase().endsWith('.' + ext)) p += '.' + ext;
-  const prefs = readJSON('prefs.json', {});
-  prefs.exportDir = path.dirname(p);
-  writeJSON('prefs.json', prefs);
+  rememberDir('exportDir', p);
   return p;
 }
 

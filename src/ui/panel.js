@@ -5,6 +5,7 @@ import { THEMES, SWATCHES, PALETTE, GRADIENTS, nodeColors, themeOf, monoBase, mi
 import { shapePath } from '../render/geometry.js';
 import { SHAPES, LAYOUT_SHAPES } from '../model.js';
 import { parseSpan } from '../layout/dates.js';
+import { openColorPicker, colorPickerOpen } from './colorpicker.js';
 
 export const SHAPE_LABELS = labels({
   rounded: 'Rectangle arrondi', rect: 'Rectangle', pill: 'Pilule', ellipse: 'Ellipse',
@@ -94,31 +95,43 @@ export class Panel {
     }, label)));
   }
 
-  // Sélecteur de couleur natif. Pendant qu'il est ouvert, il garde le focus et render() ne touche pas au panneau ;
-  // on redessine donc à sa fermeture. onPick(couleur, cléDeRegroupement) : tout le glisser = une seule étape d'annulation.
-  colorInput(value, onPick, cls, title) {
+  // Ouvre le sélecteur de Schémo sous anchor. live : onPick(couleur, clé) à chaque changement, et tout le passage dans
+  // le sélecteur = une seule étape d'annulation ; sinon onPick(couleur) une seule fois, à la fermeture. Tant qu'il est
+  // ouvert, render() ne touche pas au panneau ; on redessine à sa fermeture.
+  pickColor(anchor, value, onPick, live) {
     const key = 'color:' + (++this.colorSeq);
-    const inp = h('input', { type: 'color', class: cls, title, value: value && /^#[0-9a-f]{6}$/i.test(value) ? value : '#2f6fde' });
-    inp.addEventListener('input', (e) => onPick(e.target.value, key));
-    inp.addEventListener('change', () => { this.app.endCoalesce(); inp.blur(); this.lastKey = ''; this.render(); });
-    return inp;
+    openColorPicker(this.app, anchor, value, {
+      onInput: live ? (v) => onPick(v, key) : null,
+      onDone: (v) => {
+        if (live) this.app.endCoalesce();
+        else if (v) onPick(v);
+        this.lastKey = '';
+        this.render();
+      },
+    });
   }
 
   swatches(current, onPick, live = false) {
     const isCustom = current && !SWATCHES.includes(current);
-    const custom = live ? this.colorInput(current, onPick, 'sw-custom', tr('Autre couleur…')) : h('input', { type: 'color', class: 'sw-custom', title: tr('Autre couleur…'), value: current && /^#[0-9a-f]{6}$/i.test(current) ? current : '#2f6fde' });
-    if (!live) custom.addEventListener('change', (e) => { custom.blur(); onPick(e.target.value); });
+    const pick = h('button', {
+      type: 'button', class: 'sw sw-pick' + (isCustom ? ' on' : ''), title: tr('Autre couleur…'), 'aria-label': tr('Autre couleur…'),
+      style: isCustom ? { background: current } : null,
+      onclick: () => this.pickColor(pick, current, (v, k) => { pick.replaceChildren(); pick.style.background = v; onPick(v, k); }, live),
+    }, isCustom ? null : icon('plus', 14));
     return h('div', { class: 'swatches' },
       h('button', { class: 'sw auto' + (!current ? ' on' : ''), title: tr('Automatique (suit le thème)'), onclick: () => onPick(null) }, 'A'),
       SWATCHES.map((c) => h('button', { class: 'sw' + (current === c ? ' on' : ''), title: c, style: { background: c }, onclick: () => onPick(c) })),
-      h('label', { class: 'sw sw-pick' + (isCustom ? ' on' : ''), title: tr('Autre couleur…'), style: isCustom ? { background: current } : null }, isCustom ? null : icon('plus', 14), custom));
+      pick);
   }
 
   // Une pastille de couleur avec son nom ; onChange reçoit (couleur, clé) et la pastille suit en direct.
   colorField(label, value, onChange) {
     const dot = h('span', { class: 'cf-dot', style: { background: value } });
-    dot.appendChild(this.colorInput(value, (v, k) => { dot.style.background = v; onChange(v, k); }, '', label));
-    return h('label', { class: 'cf' }, dot, label ? h('span', null, label) : null);
+    const btn = h('button', {
+      type: 'button', class: 'cf', title: label || null, 'aria-label': label || tr('Couleur'),
+      onclick: () => this.pickColor(btn, value, (v, k) => { dot.style.background = v; onChange(v, k); }, true),
+    }, dot, label ? h('span', null, label) : null);
+    return btn;
   }
 
   // Sous le choix du thème : ce qu'on peut modifier dans le thème en cours.
@@ -174,6 +187,7 @@ export class Panel {
     const sel = [...app.sel];
     const key = t.id + '|' + sel.join(',');
     const active = document.activeElement;
+    if (key === this.lastKey && colorPickerOpen()) return;
     if (key === this.lastKey && active && this.root.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
     this.lastKey = key;
     const nodes = sel.filter((id) => t.nodes[id]);

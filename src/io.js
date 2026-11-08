@@ -36,8 +36,8 @@ export const io = {
     download(path || 'diagramme.schemo', content, 'application/json');
     return path || 'diagramme.schemo';
   },
-  async saveAs(content, name) {
-    if (api) return api.saveAs(content, name);
+  async saveAs(content, name, current) {
+    if (api) return api.saveAs(content, name, current);
     download(name || 'diagramme.schemo', content, 'application/json');
     return name || 'diagramme.schemo';
   },
@@ -89,6 +89,6 @@ export const io = {
   },
   async prefsSet(p) {
     if (api) return api.prefsSet(p);
-    try { localStorage.setItem('schemo-prefs', JSON.stringify(p)); } catch { /* sans stockage */ }
+    try { localStorage.setItem('schemo-prefs', JSON.stringify({ ...JSON.parse(localStorage.getItem('schemo-prefs') || '{}'), ...p })); } catch { /* sans stockage */ }
   },
 };

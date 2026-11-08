@@ -303,7 +303,7 @@ export class Interact {
   key(e) {
     const app = this.app;
     const tgt = e.target;
-    if (document.querySelector('.modal-wrap')) return;
+    if (document.querySelector('.modal-wrap, .cpick')) return;
     const ctrl = e.ctrlKey || e.metaKey;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     const stop = () => { e.preventDefault(); e.stopPropagation(); };

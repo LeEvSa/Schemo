@@ -916,7 +916,7 @@ class App {
     if (this.editor.active) this.editor.commit();
     try {
       this.tab.view = { ...this.renderer.cam };
-      const p = await io.saveAs(serializeDoc(this.doc), (this.fileName || tr('Diagramme')) + '.schemo');
+      const p = await io.saveAs(serializeDoc(this.doc), (this.fileName || tr('Diagramme')) + '.schemo', this.filePath);
       if (!p) return false;
       this.afterSave(p);
       return true;
