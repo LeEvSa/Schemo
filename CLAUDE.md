@@ -6,7 +6,8 @@ hors Git. **Rien de personnel dans le dépôt** : ni adresse, ni chemin, ni rés
 
 ## Mises à jour
 Nom : **semaine.numéro** (règle demandée par LeEvSa le 2026-11-01). Semaines de 7 jours depuis la création : semaine 1 = 29 oct. au 4 nov. 2026.
-Pour chaque mise à jour : `npm run nouvelle-update` (met le numéro dans `package.json`), l'écrire dans `CHANGELOG.md`, puis `npm run dist`. Publier : commit, `git push`, puis `gh release create <numéro> dist/Schemo-Setup.exe dist/Schemo-Setup.exe.blockmap dist/latest.yml dist/Schemo.exe`. **`latest.yml` est indispensable** : sans lui, la mise à jour dans l'app (electron-updater, `main.cjs`) ne trouve rien.
+**Chaque commit = une mise à jour** et porte son numéro comme nom (ex. « 2.1 », puis « 2.2 »), règle demandée par LeEvSa le 2026-11-07 ;
+un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run nouvelle-update` (met le numéro dans `package.json`), l'écrire dans `CHANGELOG.md`, puis `npm run dist`. Publier : commit, `git push`, puis `gh release create <numéro> dist/Schemo-Setup.exe dist/Schemo-Setup.exe.blockmap dist/latest.yml dist/Schemo.exe`. **`latest.yml` est indispensable** : sans lui, la mise à jour dans l'app (electron-updater, `main.cjs`) ne trouve rien.
 
 ## Ce que LeEvSa a demandé (questionnaire du 2026-10-29)
 - Saisie **à la souris seulement** (pas de panneau texte ni de phrases rapides).

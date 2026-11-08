@@ -3,6 +3,10 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 2.1 (2026-11-07)
+- **Color picker**: Schémo has its own color picker. It opens on the HEX code, and remembers the mode you choose (HEX, RGB or HSL) and your recent colors. Enter or a click elsewhere keeps the color; Esc goes back to the starting color.
+- **Folders**: Open, Save as and Export each remember the last folder you used. Save as starts in the diagram's own folder when it already has a file.
+
 ## 1.4 (2026-11-01)
 - **Real installer**: `Schemo-Setup.exe` replaces `Installer-Schemo.cmd`. You choose the folder, Schémo can be pinned to the taskbar, and it uninstalls from Windows Settings. The desktop shortcut is a checkbox on the last screen.
 - **In-app updates**: Schémo offers new versions when it starts, or through File → Check for updates. If you have an older version, install the Setup once by hand.
