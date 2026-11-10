@@ -4,7 +4,8 @@ import { el, fillNodeText, fillCGroup, fillPaint, timelineGeometry, drawTimeline
 import { edgeGeometry } from './edges.js';
 import { nodeColors, groupColors, edgeColors } from './themes.js';
 
-// Retourne { svg: chaîne, w, h }.
+// Retourne { svg: chaîne, w, h }. opts.mode 'dark' : flèches, cadres et ligne du temps aux couleurs du mode sombre
+// (pour un fond sombre) ; les cases gardent les leurs.
 export function buildSVG(L, tab, measure, opts = {}) {
   const pad = opts.padding ?? 28;
   const bb = L.bbox;
@@ -16,7 +17,7 @@ export function buildSVG(L, tab, measure, opts = {}) {
   if (shadow) shadowFilter(defs);
   if (opts.background && opts.background !== 'transparent') el('rect', { x: 0, y: 0, width: w, height: h, fill: opts.background }, svg);
   const root = el('g', { transform: `translate(${pad - bb.x} ${pad - bb.y})` }, svg);
-  const mode = 'light';
+  const mode = opts.mode === 'dark' ? 'dark' : 'light';
   const groups = [...L.groups.values()].sort((a, b) => a.depth - b.depth);
   for (const gl of groups) {
     const gm = tab.groups[gl.id];

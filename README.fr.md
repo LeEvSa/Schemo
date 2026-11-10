@@ -45,7 +45,7 @@ Pour une clé USB ou un PC où tu ne veux rien installer : `Schemo.exe`, la vers
 - **Cadres** (Ctrl+G) : regroupent des cases, s'ajustent seuls, se replient (chevron) pour alléger les gros diagrammes.
 - **Onglets** en bas comme Excel ; un fichier `.schemo` contient tous les onglets.
 - **Panneau de droite** : forme et couleur des cases, description (en Markdown), style des flèches (droite, courbe, angles, tirets, pointes, texte), thèmes de couleurs, espacement, sens de lecture.
-- **Export** (Ctrl+E) : PNG (fond blanc ou transparent, haute résolution), PDF (page ajustée ou Lettre/Légal/Tabloïd, un ou tous les onglets), SVG.
+- **Export** (Ctrl+E) : PNG (fond blanc, transparent ou sombre, haute résolution), PDF (blanc ou sombre, page ajustée ou Lettre/Légal/Tabloïd, un ou tous les onglets), SVG (blanc, transparent ou sombre). Sur fond sombre, flèches, cadres et ligne du temps prennent les couleurs du mode sombre.
 - Raccourcis : Ctrl+Z/Y, Ctrl+C/X/V/D, Suppr, F2, Ctrl+A, Ctrl+F, Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+0, F1 (aide).
 - Ouvrir, Enregistrer sous et Exporter retiennent chacun le dernier dossier utilisé. Enregistrer sous part du dossier du diagramme quand il a déjà un fichier.
 - Sauvegarde de secours automatique : si Schémo se ferme sans enregistrer, il propose de récupérer le travail au prochain lancement.

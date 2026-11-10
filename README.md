@@ -43,7 +43,7 @@ For a USB key or a PC where you don't want to install anything: `Schemo.exe`, th
 - **Frames** (Ctrl+G): group boxes, resize themselves, and collapse (chevron) to lighten large diagrams.
 - **Tabs** at the bottom, like Excel; one `.schemo` file holds all the tabs.
 - **Right panel**: box shape and color, description (in Markdown), arrow style (straight, curved, right angles, dashes, heads, text), color themes, spacing, reading direction.
-- **Export** (Ctrl+E): PNG (white or transparent background, high resolution), PDF (fitted page or Letter/Legal/Tabloid, one or all tabs), SVG.
+- **Export** (Ctrl+E): PNG (white, transparent or dark background, high resolution), PDF (white or dark, fitted page or Letter/Legal/Tabloid, one or all tabs), SVG (white, transparent or dark). On the dark background, arrows, frames and the timeline take their dark-mode colors.
 - Shortcuts: Ctrl+Z/Y, Ctrl+C/X/V/D, Del, F2, Ctrl+A, Ctrl+F, Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+0, F1 (help).
 - Open, Save as and Export each remember the last folder you used. Save as starts in the diagram's own folder when it already has a file.
 - Automatic backup: if Schémo closes without saving, it offers to recover your work at the next launch.

@@ -222,7 +222,8 @@ ipcMain.handle('export:file', async (e, { data, base64, ext, name }) => {
 
 const PAGE_INCHES = { letter: [8.5, 11], legal: [8.5, 14], tabloid: [11, 17] };
 
-ipcMain.handle('export:pdf', async (e, { pages, pageSize, name }) => {
+ipcMain.handle('export:pdf', async (e, { pages, pageSize, name, background }) => {
+  const bg = /^#[0-9a-f]{6}$/i.test(background || '') ? background : '#ffffff'; // fond des marges (Lettre, Légal…)
   const p = await askExportPath('pdf', name);
   if (!p) return null;
   let pw, ph;
@@ -243,7 +244,7 @@ ipcMain.handle('export:pdf', async (e, { pages, pageSize, name }) => {
   }).join('');
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
     @page { size: ${pw}in ${ph}in; margin: 0; }
-    html, body { margin: 0; padding: 0; background: #fff; }
+    html, body { margin: 0; padding: 0; background: ${bg}; }
     .page { width: ${pw}in; height: ${ph}in; box-sizing: border-box; padding: ${margin}in; display: flex; align-items: center; justify-content: center; page-break-after: always; break-after: page; overflow: hidden; }
     .page:last-child { page-break-after: auto; break-after: auto; }
     .page svg { max-width: 100%; max-height: 100%; width: 100%; height: 100%; }

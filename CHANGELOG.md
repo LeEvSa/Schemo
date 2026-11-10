@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 2.2 (2026-11-09)
+- **Dark background for exports**: PNG, SVG and PDF can be exported on a dark background (the same as the canvas in dark mode). Arrows, frames and the timeline then take their dark-mode colors; boxes keep theirs. PNG and SVG keep the white and transparent choices.
+
 ## 2.1 (2026-11-07)
 - **Color picker**: Schémo has its own color picker. It opens on the HEX code, and remembers the mode you choose (HEX, RGB or HSL) and your recent colors. Enter or a click elsewhere keeps the color; Esc goes back to the starting color.
 - **Folders**: Open, Save as and Export each remember the last folder you used. Save as starts in the diagram's own folder when it already has a file.

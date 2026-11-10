@@ -1,6 +1,6 @@
 {
   "name": "schemo",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Schémo — diagrammes qui se rangent tout seuls",
   "main": "electron/main.cjs",
   "scripts": {

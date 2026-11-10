@@ -113,6 +113,7 @@ const EN = {
   'Fond': 'Background',
   'Blanc': 'White',
   'Transparent': 'Transparent',
+  'Sombre': 'Dark',
   'Netteté': 'Sharpness',
   'Normale': 'Normal',
   'Haute': 'High',

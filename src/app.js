@@ -9,7 +9,7 @@ import { makeMeasurer } from './layout/sizing.js';
 import { markdownPlain } from './layout/markdown.js';
 import { Renderer } from './render/renderer.js';
 import { buildSVG, svgToPngBase64 } from './render/export.js';
-import { THEMES, SWATCHES } from './render/themes.js';
+import { THEMES, SWATCHES, CANVAS } from './render/themes.js';
 import { handleActions, frameHandles } from './ui/handles.js';
 import { h, icon } from './ui/dom.js';
 import { showModal, toast, stickyToast, showMenu } from './ui/dialogs.js';
@@ -999,9 +999,12 @@ class App {
     };
     const rows = h('div', { class: 'form' });
     const refresh = () => {
+      if (state.format === 'pdf' && state.bg === 'transparent') state.bg = 'white'; // un PDF a toujours un fond
       rows.replaceChildren(...[
         h('label', { class: 'form-row' }, h('span', null, tr('Format')), seg('format', [['png', tr('Image PNG')], ['pdf', 'PDF'], ['svg', 'SVG']])),
-        state.format !== 'pdf' ? h('label', { class: 'form-row' }, h('span', null, tr('Fond')), seg('bg', [['white', tr('Blanc')], ['transparent', tr('Transparent')]])) : null,
+        h('label', { class: 'form-row' }, h('span', null, tr('Fond')), seg('bg', state.format === 'pdf'
+          ? [['white', tr('Blanc')], ['dark', tr('Sombre')]]
+          : [['white', tr('Blanc')], ['transparent', tr('Transparent')], ['dark', tr('Sombre')]])),
         state.format === 'png' ? h('label', { class: 'form-row' }, h('span', null, tr('Netteté')), seg('scale', [['1', tr('Normale')], ['2', tr('Haute')], ['3', tr('Très haute')]])) : null,
         state.format === 'pdf' ? h('label', { class: 'form-row' }, h('span', null, tr('Page')), seg('page', [['fit', tr('Ajustée')], ['letter', tr('Lettre')], ['legal', tr('Légal')], ['tabloid', tr('Tabloïd')]])) : null,
         state.format === 'pdf' ? h('label', { class: 'form-row' }, h('span', null, tr('Onglets')), seg('tabs', [['current', tr('Onglet actuel')], ['all', tr('Tous les onglets')]])) : null,
@@ -1018,6 +1021,8 @@ class App {
   }
 
   async doExport(state) {
+    // fond sombre : celui de la zone de dessin en mode sombre, avec les flèches et cadres du mode sombre
+    const look = state.bg === 'dark' ? { background: CANVAS.dark, mode: 'dark' } : { background: state.bg === 'transparent' ? 'transparent' : '#ffffff', mode: 'light' };
     const safe = (s) => String(s).replace(/[\\/:*?"<>|]+/g, '-').trim() || 'diagramme';
     const name = safe(this.isUntitledName() ? this.tab.name : `${this.fileName} - ${this.tab.name}`);
     try {
@@ -1027,17 +1032,17 @@ class App {
         for (const t of tabs) {
           const L = await this.layoutForTab(t);
           if (!L.nodes.size && tabs.length > 1) continue;
-          const s = buildSVG(L, t, this.measure, { background: '#ffffff' });
+          const s = buildSVG(L, t, this.measure, look);
           pages.push({ svg: s.svg, w: s.w, h: s.h, name: t.name });
         }
         if (!pages.length) { toast(tr('Rien à exporter : le diagramme est vide.')); return; }
-        const p = await io.exportPDF({ pages, pageSize: state.page, name: state.tabs === 'all' ? safe(this.fileName) : name });
+        const p = await io.exportPDF({ pages, pageSize: state.page, name: state.tabs === 'all' ? safe(this.fileName) : name, background: look.background });
         if (p) toast(tr('PDF exporté'));
         return;
       }
       const L = this.L;
       if (!L || !L.nodes.size) { toast(tr('Rien à exporter : le diagramme est vide.')); return; }
-      const s = buildSVG(L, this.tab, this.measure, { background: state.bg === 'white' ? '#ffffff' : 'transparent' });
+      const s = buildSVG(L, this.tab, this.measure, look);
       if (state.format === 'svg') {
         const p = await io.exportFile({ data: s.svg, base64: false, ext: 'svg', name });
         if (p) toast(tr('SVG exporté'));
