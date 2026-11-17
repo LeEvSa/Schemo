@@ -304,6 +304,10 @@ async function forcedArrange(C, shape, items, edges, size) {
       const start = (id) => C.prev[id] || C.hints[id] || null;
       return [AR.networkArrange(items, pairs, edges, size, C.sp, C.orderOf, start, C.measure)];
     }
+    case 'arc': {
+      const tensionOf = (id) => (C.nodes[id] && C.nodes[id].tension) || null;
+      return [AR.arcArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, tensionOf)];
+    }
     case 'list':
       return [AR.gridArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, dir)];
     case 'pyramid':

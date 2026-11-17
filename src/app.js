@@ -1320,7 +1320,7 @@ class App {
   }
 }
 
-export const LAYOUT_ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', inherit: 'sparkle' };
+export const LAYOUT_ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', arc: 'arc', inherit: 'sparkle' };
 
 const BRAND_SVG = '<svg viewBox="0 0 32 32" width="22" height="22"><defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><rect x="1" y="1" width="30" height="30" rx="8" fill="url(#bg1)"/><path d="M16 7.5a8.5 8.5 0 0 1 7.4 12.7M8.6 20.2A8.5 8.5 0 0 1 16 7.5M23.4 20.2a8.5 8.5 0 0 1-14.8 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-opacity=".7"/><rect x="12" y="4.5" width="8" height="6" rx="2" fill="#fff"/><rect x="19.5" y="17.5" width="8" height="6" rx="2" fill="#fff"/><rect x="4.5" y="17.5" width="8" height="6" rx="2" fill="#fff"/></svg>';
 

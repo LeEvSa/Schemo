@@ -62,6 +62,7 @@ const P = {
   radial: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="3.5" r="1.6"/><circle cx="19.5" cy="16" r="1.6"/><circle cx="4.5" cy="16" r="1.6"/><path d="M12 9V5.2M14.6 13.5l3.5 1.7M9.4 13.5l-3.5 1.7"/>',
   threads: '<path d="M3 5h18M3 12h18M3 19h18" opacity=".35"/><rect x="3" y="3" width="6" height="4" rx="1"/><rect x="13" y="10" width="6" height="4" rx="1"/><rect x="7" y="17" width="6" height="4" rx="1"/><path d="M9 6.5l4 4"/>',
   network: '<circle cx="6" cy="7" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="16" cy="18" r="2.5"/><circle cx="5" cy="17" r="2"/><path d="M8.4 6.6l7.2-1.2M7.6 8.8l6.8 7.4M17.6 7.5l-1.2 8M7 17.2l6.5.6"/>',
+  arc: '<path d="M3 19c4-1 6-6 9-11 2-3 3-4 4-3 2 2 3 9 5 13"/><circle cx="3.5" cy="18.5" r="1.5"/><circle cx="15.5" cy="5" r="1.5"/><circle cx="20.5" cy="17.5" r="1.5"/>',
   arrowDown: '<path d="M12 4v16M6 14l6 6 6-6"/>',
   arrowRight: '<path d="M4 12h16M14 6l6 6-6 6"/>',
   mixed: '<path d="M5 4v10h10"/><path d="m12 11 3 3-3 3"/><path d="m2 11 3 3 3-3"/>',

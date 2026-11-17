@@ -436,7 +436,7 @@ export class Renderer {
       return c ? (c.fill.toLowerCase() === '#ffffff' ? c.stroke : c.fill) : col.stroke;
     };
     const geos = (this.L.timelines || []).map((tl) => timelineGeometry(tl, (id) => this.itemBox(id))).filter(Boolean);
-    const key = JSON.stringify([mode, geos, geos.map((g) => g.ticks.map((t) => dotOf(t.id)))]);
+    const key = JSON.stringify([mode, geos, geos.map((g) => (g.ticks || []).map((t) => dotOf(t.id)))]);
     if (key === this.timelineKey) return;
     this.timelineKey = key;
     clear(this.layerTimeline);

@@ -15,7 +15,7 @@ export const SHAPE_LABELS = labels({
 export const LAYOUT_LABELS = labels({
   auto: 'Automatique', cycle: 'Cycle', hierarchy: 'Hiérarchie', process: 'Processus',
   list: 'Liste', pyramid: 'Pyramide', radial: 'Carte d’idées', timeline: 'Chronologie',
-  threads: 'Fils narratifs', network: 'Réseau',
+  threads: 'Fils narratifs', network: 'Réseau', arc: 'Arc dramatique',
 });
 
 const LAYOUT_HELP = labels({
@@ -28,15 +28,16 @@ const LAYOUT_HELP = labels({
   radial: 'Une idée au centre, les autres tout autour.',
   timeline: 'Les cases suivent une ligne du temps, classées toutes seules par date.',
   network: 'Personnages et relations : les cases reliées se rapprochent, sans haut ni bas. Les nouveaux liens sont des traits sans pointe.',
+  arc: 'Les scènes suivent la tension de l’histoire : choisis un niveau de 1 à 5 par scène, ou laisse la courbe classique.',
   threads: 'Un cadre par personnage ou intrigue : ses scènes vont de gauche à droite, alignées dans le temps avec celles des autres fils.',
 });
 
-const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', inherit: 'sparkle' };
+const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', arc: 'arc', inherit: 'sparkle' };
 
 const ROLE_WORDS = labels({
   cycle: 'dans un cycle (cercle)', ray: 'accrochée à un cycle', tree: 'dans une hiérarchie', chain: 'dans un processus',
   layered: 'dans un schéma à embranchements', single: 'seule (pas encore reliée)', pinned: 'épinglée à la main',
-  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', network: 'dans un réseau', free: 'libre',
+  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', network: 'dans un réseau', arc: 'dans un arc dramatique', free: 'libre',
 });
 
 function shapeIcon(shape) {
@@ -301,6 +302,10 @@ export class Panel {
       oninput: (e) => { dateNote.textContent = dateText(e.target.value); app.setNodeProps([one.id], { date: e.target.value }, 'pdate:' + one.id); },
       onblur: () => app.endCoalesce(),
     }) : null;
+    // Arc dramatique : niveau de tension (Auto = moyenne des voisines, ou courbe classique si aucune n'en a)
+    const tensionSeg = ids.every((id) => app.scopeShapeOf(id) === 'arc')
+      ? this.seg([[null, tr('Auto')], [1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']], first.tension || null, (v) => app.setNodeProps(ids, { tension: v }))
+      : null;
     const allPinned = ids.every((id) => t.nodes[id].pin);
     const setColors = (props, k) => app.setNodeColors(ids, props, k);
     // Passer au dégradé part des couleurs actuelles de la case : son dégradé de thème s'il y en a un, sinon sa couleur
@@ -314,6 +319,7 @@ export class Panel {
     return h('div', { class: 'p-inner' },
       h('div', { class: 'p-title' }, h('span', null, one ? tr('Case') : tr('{n} cases', { n: ids.length })), edgeCount ? h('span', { class: 'p-sub' }, '+ ' + tr(edgeCount > 1 ? '{n} flèches' : '{n} flèche', { n: edgeCount })) : null),
       dateInput ? this.section(tr('Date'), dateInput, dateNote) : null,
+      tensionSeg ? this.section(tr('Tension'), tensionSeg, h('p', { class: 'muted small' }, tr('Plus le niveau est haut, plus la scène monte sur l’arc.'))) : null,
       one ? this.section(tr('Texte'), titleInput, descInput, h('p', { class: 'muted small' }, tr(MARKDOWN_HELP)), roleLine) : null,
       this.section(tr('Forme'),
         h('div', { class: 'shape-grid' }, SHAPES.map((s) => h('button', {

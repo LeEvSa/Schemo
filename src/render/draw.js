@@ -120,6 +120,10 @@ export function fillPaint(colors, defs) {
 // Ligne du temps à partir des positions courantes des cases : elle les suit pendant une animation ou un déplacement.
 // La position de la ligne est la médiane de ce que dit chaque case, pour qu'une case tirée à la souris ne l'emporte pas.
 export function timelineGeometry(tl, boxOf) {
+  if (tl.kind === 'arc') {
+    const pts = tl.ids.map((id) => boxOf(id)).filter(Boolean).map((b) => ({ x: r2(b.x), y: r2(b.y) }));
+    return pts.length > 1 ? { kind: 'arc', pts } : null;
+  }
   const horiz = tl.axis === 'LR';
   const marks = tl.members.map((m) => ({ m, b: boxOf(m.id) })).filter((x) => x.b);
   if (!marks.length) return null;
@@ -154,6 +158,17 @@ export function timelineGeometry(tl, boxOf) {
 
 // colors : { line, text } ; dotOf(id) : couleur du point de chaque case.
 export function drawTimeline(parent, geo, colors, dotOf) {
+  if (geo.kind === 'arc') {
+    // courbe lisse (Catmull-Rom) par le centre des scènes
+    const p = geo.pts;
+    let d = `M${p[0].x} ${p[0].y}`;
+    for (let i = 0; i + 1 < p.length; i++) {
+      const a = p[i - 1] || p[i], b = p[i], c = p[i + 1], e = p[i + 2] || c;
+      d += `C${r2(b.x + (c.x - a.x) / 6)} ${r2(b.y + (c.y - a.y) / 6)} ${r2(c.x - (e.x - b.x) / 6)} ${r2(c.y - (e.y - b.y) / 6)} ${c.x} ${c.y}`;
+    }
+    el('path', { d, fill: 'none', stroke: colors.line, 'stroke-width': 4, 'stroke-opacity': 0.35, 'stroke-linecap': 'round' }, parent);
+    return;
+  }
   const { horiz, at, start, end } = geo;
   const a = horiz ? { x: start, y: at } : { x: at, y: start };
   const z = horiz ? { x: end, y: at } : { x: at, y: end };

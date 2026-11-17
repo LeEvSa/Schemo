@@ -3,7 +3,7 @@ import { tr } from './i18n.js';
 import { defaultColors } from './render/themes.js';
 
 export const SHAPES = ['rounded', 'rect', 'pill', 'ellipse', 'circle', 'diamond', 'hexagon', 'parallelogram'];
-export const LAYOUT_SHAPES = ['auto', 'cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial', 'timeline', 'threads', 'network'];
+export const LAYOUT_SHAPES = ['auto', 'cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial', 'timeline', 'threads', 'network', 'arc'];
 // Formes qui font de leurs cadres des bandes (Fils narratifs) : un cadre qui en hérite range son contenu en file.
 export const FRAME_LAYOUTS = { threads: 'lane' };
 export const DIRECTIONS = ['mixed', 'TB', 'LR'];
@@ -37,7 +37,7 @@ export function nextOrder(tab) {
 
 export function createNode(tab, props = {}) {
   const n = {
-    id: uid('n'), title: '', desc: '', date: '', shape: 'rounded', color: null, color2: null, gradDir: 'h', textColor: null, borderColor: null,
+    id: uid('n'), title: '', desc: '', date: '', tension: null, shape: 'rounded', color: null, color2: null, gradDir: 'h', textColor: null, borderColor: null,
     group: null, pin: null, order: nextOrder(tab), ...props,
   };
   tab.nodes[n.id] = n;
@@ -225,6 +225,7 @@ export function normalizeDoc(raw) {
       if (!n || typeof n.id !== 'string') continue;
       t.nodes[n.id] = {
         id: n.id, title: str(n.title), desc: readDesc(n), date: str(n.date),
+        tension: Number.isInteger(n.tension) && n.tension >= 1 && n.tension <= 5 ? n.tension : null,
         shape: pick(n.shape, SHAPES, 'rounded'), color: typeof n.color === 'string' ? n.color : null,
         color2: hexOr(n.color2), gradDir: pick(n.gradDir, GRAD_DIRS, 'h'), textColor: hexOr(n.textColor), borderColor: hexOr(n.borderColor),
         group: typeof n.group === 'string' && t.groups[n.group] ? n.group : null,

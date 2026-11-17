@@ -338,5 +338,27 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   console.log('  écart max des distances après ajout : ' + Math.round(worst));
 }
 
+// Arc dramatique : courbe classique sans niveau, puis niveaux choisis et moyenne des voisines
+{
+  const t = createTab('arc');
+  t.settings.shape = 'arc';
+  const S = ['Exposition', 'Incident', 'Montée', 'Crise', 'Climax', 'Chute', 'Fin'].map((title) => createNode(t, { title }));
+  let L = await computeLayout(t, measure, {});
+  const y = (i) => L.nodes.get(S[i].id).y, x = (i) => L.nodes.get(S[i].id).x;
+  console.log(`• arc bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'arc : chevauchements');
+  check([1, 2, 3, 4, 5, 6].every((i) => x(i) > x(i - 1)), 'arc : de gauche à droite');
+  const top = [0, 1, 2, 3, 4, 5, 6].reduce((b, i) => (y(i) < y(b) ? i : b), 0);
+  check(top === 4, 'arc : sommet aux 2/3 (scène 5), trouvé ' + (top + 1));
+  check(y(6) < y(0), 'arc : la fin plus haute que le début');
+  check(L.timelines.some((tl) => tl.kind === 'arc' && tl.ids.length === 7), 'arc : courbe dessinée');
+  t.nodes[S[0].id].tension = 1; t.nodes[S[2].id].tension = 5; t.nodes[S[5].id].tension = 2;
+  L = await computeLayout(t, measure, {});
+  const step = Math.abs(y(2) - y(0)) / 4;
+  check(Math.abs((y(0) - y(1)) / step - 2) < 0.01, 'arc : scène sans niveau = moyenne de ses voisines (3)');
+  check(Math.abs(y(4) - y(3)) > 0 && y(3) < y(4) && y(4) < y(5), 'arc : redescend de 5 vers 2');
+  check(Math.abs(y(6) - y(5)) < 0.01, 'arc : après la dernière scène réglée, même niveau');
+}
+
 console.log(failures ? `\n${failures} échec(s)` : '\nTous les tests passent.');
 process.exit(failures ? 1 : 0);

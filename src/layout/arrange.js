@@ -458,6 +458,46 @@ export function radialArrange(items, pairs, edges, size, sp, orderOf) {
   return A;
 }
 
+// ---------- Arc dramatique ----------
+// Les scènes de gauche à droite ; leur hauteur suit la tension (1 à 5). Sans aucun niveau choisi : courbe classique,
+// qui monte jusqu'aux 2/3 puis redescend. Une scène sans niveau prend la moyenne de ses voisines qui en ont un.
+export function arcTensions(order, tensionOf) {
+  const n = order.length;
+  const set = order.map((id) => tensionOf(id));
+  if (!set.some((v) => v)) {
+    if (n === 1) return [3];
+    const p = Math.max(1, Math.round((n - 1) * 2 / 3));
+    return order.map((_, i) => (i <= p ? 1 + (4 * i) / p : 5 - (3 * (i - p)) / Math.max(1, n - 1 - p)));
+  }
+  return set.map((v, i) => {
+    if (v) return v;
+    let a = i - 1, b = i + 1;
+    while (a >= 0 && !set[a]) a--;
+    while (b < n && !set[b]) b++;
+    if (a < 0) return set[b];
+    if (b >= n) return set[a];
+    return set[a] + ((set[b] - set[a]) * (i - a)) / (b - a);
+  });
+}
+
+export function arcArrange(order, edges, size, sp, tensionOf) {
+  const A = emptyArrangement();
+  const n = order.length;
+  const t = arcTensions(order, tensionOf);
+  const maxH = Math.max(...order.map((id) => size(id).h));
+  const step = maxH * 0.8 + sp.gap * 0.5;
+  let x = 0;
+  order.forEach((id, i) => {
+    if (i > 0) x += (size(order[i - 1]).w + size(id).w) / 2 + sp.gap * 0.6;
+    A.pos.set(id, { x, y: -(t[i] - 1) * step });
+    A.ctx.set(id, { role: 'arc', axis: 'LR', depth: 0, seq: i, seqLen: n, branch: i });
+  });
+  // la courbe passe derrière les cases (dessinée avec les lignes du temps, voir draw.timelineGeometry)
+  A.timeline = { kind: 'arc', ids: [...order], bb: { x: 0, y: -4 * step, w: x, h: 4 * step } };
+  for (const e of edges) if (e.direct) A.hints.set(e.id, { kind: 'straight' });
+  return A;
+}
+
 // ---------- Réseau (personnages et relations) ----------
 // Disposition « en toile » : les cases reliées s'attirent, toutes se repoussent ; pas de haut ni de bas.
 // start(id) : position de départ connue (calcul précédent), pour que l'ajout d'une case ne bouscule pas tout.

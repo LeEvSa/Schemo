@@ -59,6 +59,8 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   sur des colonnes communes (plus long chemin : ordre de la bande + flèches entre bandes) et déplace le contenu des bandes (`moveSubtree`).
   Réseau (`network`) : `AR.networkArrange`, forces (attraction des liens, répulsion, légère gravité) partant des positions précédentes
   (`tab.positions`), puis on écarte les cases qui se chevauchent ; `app.linkProps` y crée des liens sans pointe.
+  Arc dramatique (`arc`) : `node.tension` (1 à 5 ou null), `AR.arcTensions` (moyenne des voisines, courbe classique sans aucun niveau) ;
+  la courbe passe par `L.timelines` avec `kind: 'arc'` (`draw.timelineGeometry` / `drawTimeline` la dessinent).
 - Flèches : chaque bout est une case ou un cadre (`model.canLink`, refusé entre un cadre et son contenu). Une flèche devenue interne
   (case glissée dans le cadre relié) n'est plus dessinée mais reste, et revient si la case ressort. `renderer.itemBox` = case ou cadre.
 - `src/render/renderer.js` : SVG, caméra, animation 380 ms (positions interpolées), poignées « + », aperçu de lien.
