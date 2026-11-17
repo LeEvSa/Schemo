@@ -1,7 +1,7 @@
 // Construction des éléments SVG (partagée par l'affichage en direct et l'export).
 import { tr, getLang } from '../i18n.js';
 import { shapePath } from './geometry.js';
-import { FONT, MONO, T } from '../layout/sizing.js';
+import { FONT, MONO, T, TEXT_DY } from '../layout/sizing.js';
 
 export const NS = 'http://www.w3.org/2000/svg';
 
@@ -48,7 +48,7 @@ export function fillNodeText(g, n, color) {
   clear(g);
   const tb = n.text;
   if (!tb || !tb.lines.length) return;
-  const top = -tb.height / 2;
+  const top = -tb.height / 2 + (TEXT_DY[n.shape] || 0) * (n.h || 0);
   const left = -tb.width / 2;
   for (const l of tb.lines) {
     if (!l.text && tb.lines.length === 1) continue;

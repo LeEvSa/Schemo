@@ -42,7 +42,7 @@ For a USB key or a PC where you don't want to install anything: `Schemo.exe`, th
 - **Shape menu** (top bar or panel): Automatic, Cycle, Hierarchy, Process, List, Pyramid, Mind map, Timeline, Story threads, Network, Story arc, Board, Family tree, Target, Parallel timeline, for the whole tab or a single frame.
 - **Frames** (Ctrl+G): group boxes, resize themselves, and collapse (chevron) to lighten large diagrams.
 - **Tabs** at the bottom, like Excel; one `.schemo` file holds all the tabs.
-- **Right panel**: box shape and color, description (in Markdown), arrow style (straight, curved, right angles, dashes, heads, text), color themes, spacing, reading direction.
+- **Right panel**: box shape (rounded, rectangle, pill, ellipse, circle, diamond, hexagon, parallelogram, and for stories shield, star, cloud, crown) and color, description (in Markdown), arrow style (straight, curved, right angles, dashes, heads, text), color themes, spacing, reading direction.
 - **Export** (Ctrl+E): PNG (white, transparent or dark background, high resolution), PDF (white or dark, fitted page or Letter/Legal/Tabloid, one or all tabs), SVG (white, transparent or dark). On the dark background, arrows, frames and the timeline take their dark-mode colors.
 - Shortcuts: Ctrl+Z/Y, Ctrl+C/X/V/D, Del, F2, Ctrl+A, Ctrl+F, Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+0, F1 (help).
 - Open, Save as and Export each remember the last folder you used. Save as starts in the diagram's own folder when it already has a file.

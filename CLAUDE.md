@@ -48,6 +48,8 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   précédente de sa case `focus` ou de sa plus vieille case, puis évite les collisions) ; dans un cadre : rangées.
 - `src/layout/markdown.js` : Markdown de `node.desc` (blocs + styles en ligne), sans dépendance. `normalizeDoc` convertit les anciens
   `bullets` en liste. `sizing.textBlock` en fait des lignes à `runs` stylés, `draw.fillNodeText` les dessine en `<tspan>`.
+- Formes de case pour histoires (2026-11-17) : `shield`, `star`, `crown` (polygones de `geometry.polygonOf`), `cloud` (bosses en arcs,
+  bord = ellipse) ; `sizing.INNER` (place du texte) et `TEXT_DY` (texte décalé : sous les pointes de la couronne).
 - `src/layout/sizing.js` : texte coupé en lignes, `fitUniform` (taille commune par composante ; losange/ellipse/cercle
   peuvent grandir seuls).
 - Indices de tracé (`hint`) donnés par la disposition à chaque flèche : `arc` (cycle), `tree`/`hang` (hiérarchie),

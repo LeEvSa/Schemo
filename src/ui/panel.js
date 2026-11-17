@@ -10,6 +10,7 @@ import { openColorPicker, colorPickerOpen } from './colorpicker.js';
 export const SHAPE_LABELS = labels({
   rounded: 'Rectangle arrondi', rect: 'Rectangle', pill: 'Pilule', ellipse: 'Ellipse',
   circle: 'Cercle', diamond: 'Losange', hexagon: 'Hexagone', parallelogram: 'Parallélogramme',
+  shield: 'Bouclier', star: 'Étoile', cloud: 'Nuage', crown: 'Couronne',
 });
 
 export const LAYOUT_LABELS = labels({
@@ -49,7 +50,7 @@ function shapeIcon(shape) {
   s.setAttribute('viewBox', '-16 -11 32 22');
   s.setAttribute('width', 30);
   s.setAttribute('height', 21);
-  const w = shape === 'circle' ? 18 : 28, hh = 18;
+  const w = shape === 'circle' || shape === 'star' ? 20 : 28, hh = shape === 'star' ? 20 : 18;
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   p.setAttribute('d', shapePath(shape, w, hh));
   p.setAttribute('fill', 'currentColor');

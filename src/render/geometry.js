@@ -19,6 +19,25 @@ export function polygonOf(shape, w, h, trap) {
     case 'hexagon': { const i = Math.min(b * 0.58, w * 0.2); return [[-a + i, -b], [a - i, -b], [a, 0], [a - i, b], [-a + i, b], [-a, 0]]; }
     case 'parallelogram': { const s = Math.min(h * 0.35, w * 0.15); return [[-a + s, -b], [a, -b], [a - s, b], [-a, b]]; }
     case 'trap': { const t = (trap ? trap.top : w) / 2, bt = (trap ? trap.bottom : w) / 2; return [[-t, -b], [t, -b], [bt, b], [-bt, b]]; }
+    case 'star': {
+      const pts = [];
+      for (let i = 0; i < 10; i++) {
+        const an = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 0.48 : 1;
+        pts.push([a * r * Math.cos(an), b * r * Math.sin(an)]);
+      }
+      return pts;
+    }
+    case 'crown': { const v = -b + 0.4 * h; return [[-a, b], [a, b], [a, -b], [a * 0.5, v], [0, -b], [-a * 0.5, v], [-a, -b]]; }
+    case 'shield': {
+      // bord du haut droit, côtés droits puis une courbe jusqu'à la pointe du bas
+      const y1 = -b + 0.42 * h, right = [];
+      for (let i = 0; i <= 8; i++) {
+        const t = i / 8, u = 1 - t;
+        right.push([u * u * a + 2 * u * t * a, u * u * y1 + 2 * u * t * (y1 + (b - y1) * 0.62) + t * t * b]);
+      }
+      const left = right.slice(0, -1).reverse().map(([x, y]) => [-x, y]);
+      return [[-a, -b], [a, -b], ...right, ...left];
+    }
     default: return null;
   }
 }
@@ -27,6 +46,18 @@ export function shapePath(shape, w, h, trap) {
   switch (shape) {
     case 'rect': return roundedRect(w, h, 2.5);
     case 'pill': return roundedRect(w, h, h / 2);
+    case 'cloud': {
+      // des bosses autour d'une ellipse, chacune un arc qui sort vers l'extérieur
+      const n = 9, ra = w * 0.42, rb = h * 0.41;
+      const pts = Array.from({ length: n }, (_, i) => { const an = -Math.PI / 2 + (2 * Math.PI * i) / n; return [ra * Math.cos(an), rb * Math.sin(an)]; });
+      let d = `M${f(pts[0][0])} ${f(pts[0][1])}`;
+      for (let i = 0; i < n; i++) {
+        const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % n];
+        const r = Math.hypot(x2 - x1, y2 - y1) * 0.6;
+        d += `A${f(r)} ${f(r)} 0 0 1 ${f(x2)} ${f(y2)}`;
+      }
+      return d + 'Z';
+    }
     case 'ellipse':
     case 'circle': {
       const a = w / 2, b = h / 2;
@@ -36,6 +67,9 @@ export function shapePath(shape, w, h, trap) {
     case 'hexagon':
     case 'parallelogram':
     case 'trap':
+    case 'star':
+    case 'crown':
+    case 'shield':
       return polygon(polygonOf(shape, w, h, trap));
     case 'rounded':
     default:
@@ -48,7 +82,7 @@ export function boundary(shape, w, h, trap, dx, dy) {
   const len = Math.hypot(dx, dy);
   if (len < 1e-9) return { x: 0, y: -h / 2 };
   dx /= len; dy /= len;
-  if (shape === 'ellipse' || shape === 'circle') {
+  if (shape === 'ellipse' || shape === 'circle' || shape === 'cloud') {
     const t = 1 / Math.sqrt((dx / (w / 2)) ** 2 + (dy / (h / 2)) ** 2);
     return { x: dx * t, y: dy * t };
   }
@@ -92,7 +126,7 @@ export function boundary(shape, w, h, trap, dx, dy) {
 // Le point (relatif au centre) est-il dans la forme (agrandie de m) ?
 export function inside(shape, w, h, trap, px, py, m = 0) {
   const a = w / 2 + m, b = h / 2 + m;
-  if (shape === 'ellipse' || shape === 'circle') return (px / a) ** 2 + (py / b) ** 2 <= 1;
+  if (shape === 'ellipse' || shape === 'circle' || shape === 'cloud') return (px / a) ** 2 + (py / b) ** 2 <= 1;
   if (shape === 'diamond') return Math.abs(px) / a + Math.abs(py) / b <= 1;
   return Math.abs(px) <= a && Math.abs(py) <= b;
 }

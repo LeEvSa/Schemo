@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.10 (2026-11-17)
+- **New box shapes** for stories: shield, star, cloud and crown. Arrows attach to their real outline, and the text sits where it fits (under the crown's points, in the top of the shield).
+
 ## 3.9 (2026-11-17)
 - **Parallel timeline** shape: one frame per character, stacked as bands; scenes are placed by date on a time shared by all bands, with a ruler of dates on top and light lines across the bands. Even or to scale, following the Time line setting.
 

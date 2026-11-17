@@ -10,7 +10,10 @@ export const T = { title: 14, desc: 12.5, line: 1.3, padX: 12, padY: 9, indent: 
 export const INNER = {
   rounded: [1, 1], rect: [1, 1], pill: [0.84, 1], ellipse: [0.74, 0.76], circle: [0.74, 0.76],
   diamond: [0.6, 0.62], hexagon: [0.8, 1], parallelogram: [0.78, 1], trap: [1, 1],
+  shield: [0.8, 0.64], star: [0.5, 0.42], cloud: [0.7, 0.66], crown: [0.9, 0.55],
 };
+// Décalage vertical du texte (part de la hauteur) : sous les pointes de la couronne, dans le haut du bouclier.
+export const TEXT_DY = { crown: 0.2, shield: -0.08, star: 0.04 };
 
 const MIN_TW = 86, MAX_TW = 170, MAX_TW_DESC = 236, MIN_H = 52;
 
@@ -176,7 +179,8 @@ export function fitUniform(nodes, measure, shapeOf = (n) => n.shape) {
   if (!nodes.length) return res;
   const inner = (n) => INNER[shapeOf(n)] || INNER.rounded;
   let core = nodes.filter((n) => inner(n)[0] >= 0.95);
-  if (!core.length) core = nodes;
+  // aucune case rectangulaire : les formes qui laissent le plus de place au texte fixent la taille commune
+  if (!core.length) { const best = Math.max(...nodes.map((n) => inner(n)[0])); core = nodes.filter((n) => inner(n)[0] >= best - 0.05); }
   const anyDesc = nodes.some(hasDesc);
   let tw = MIN_TW;
   for (const n of nodes) tw = Math.max(tw, naturalWidth(n, measure));
@@ -212,7 +216,7 @@ export function fitUniform(nodes, measure, shapeOf = (n) => n.shape) {
       h = Math.max(H, Math.ceil(needOf(n, w, scale)));
       if (shape === 'diamond' && h > H * 1.6) { w = Math.ceil(w * 1.3); h = Math.max(H, Math.ceil(needOf(n, w, scale))); }
     }
-    if (shape === 'circle') { w = h = Math.max(w, h, Math.ceil(needOf(n, Math.max(w, h), scale))); }
+    if (shape === 'circle' || shape === 'star') { w = h = Math.max(w, h, Math.ceil(needOf(n, Math.max(w, h), scale))); }
     const [rx] = inner(n);
     const text = textBlock(n, w * rx - 2 * T.padX, scale, measure);
     res.set(n.id, { w, h, scale, text });
