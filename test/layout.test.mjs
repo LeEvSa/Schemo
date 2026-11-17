@@ -309,5 +309,34 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   }
 }
 
+// Réseau : pas de chevauchement, les cases reliées plus proches que les autres, stable quand on ajoute une case
+{
+  const t = createTab('réseau');
+  t.settings.shape = 'network';
+  const P = ['Élise', 'Tomas', 'La reine', 'Le roi', 'Mara', 'Le garde', 'Le marchand', 'Ilo'].map((title) => createNode(t, { title }));
+  const link = (a, b, label = '') => createEdge(t, P[a].id, P[b].id, { arrows: 'none', label });
+  const linked = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5], [3, 5], [2, 6]];
+  for (const [a, b] of linked) link(a, b);
+  const L = await computeLayout(t, measure, {});
+  console.log(`• réseau bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'réseau : chevauchements');
+  const d = (M, a, b) => Math.hypot(M.nodes.get(P[a].id).x - M.nodes.get(P[b].id).x, M.nodes.get(P[a].id).y - M.nodes.get(P[b].id).y);
+  const avgL = linked.reduce((s, [a, b]) => s + d(L, a, b), 0) / linked.length;
+  let sum = 0, cnt = 0;
+  for (let a = 0; a < 7; a++) for (let b = a + 1; b < 7; b++) if (!linked.some(([x, y]) => (x === a && y === b) || (x === b && y === a))) { sum += d(L, a, b); cnt++; }
+  check(avgL < sum / cnt, `réseau : reliées plus proches (${Math.round(avgL)} contre ${Math.round(sum / cnt)})`);
+  check(L.bbox.w < 3000 && L.bbox.h < 3000, 'réseau : reste compact');
+  // ajout d'une case : les autres gardent à peu près leur place les unes par rapport aux autres
+  t.positions = {};
+  for (const [id, n] of L.nodes) t.positions[id] = { x: n.x, y: n.y };
+  const extra = createNode(t, { title: 'Nouveau' });
+  createEdge(t, P[0].id, extra.id, { arrows: 'none' });
+  const L2 = await computeLayout(t, measure, {});
+  check(overlaps(L2).length === 0, 'réseau : chevauchements après ajout');
+  let worst = 0;
+  for (const [a, b] of linked) worst = Math.max(worst, Math.abs(d(L2, a, b) - d(L, a, b)));
+  console.log('  écart max des distances après ajout : ' + Math.round(worst));
+}
+
 console.log(failures ? `\n${failures} échec(s)` : '\nTous les tests passent.');
 process.exit(failures ? 1 : 0);

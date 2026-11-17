@@ -59,6 +59,7 @@ export function handleActions(n, L, tab, scopeShape) {
       return res;
     }
     case 'radial':
+    case 'network':
       return { top: A('branch'), right: A('branch'), bottom: A('branch'), left: A('branch') };
     case 'single':
     case 'pinned':

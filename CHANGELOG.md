@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.2 (2026-11-16)
+- **Network** shape: characters and relationships laid out as a web, linked boxes close together, with no top or bottom. New links are lines without arrowheads; adding a character barely moves the others.
+
 ## 3.1 (2026-11-16)
 - **Story threads** shape: one frame per character or plot line, stacked as bands. Scenes run left to right and line up in time across bands; an arrow from one band to another pushes the scene after it. The + adds a scene before or after, without an arrow.
 

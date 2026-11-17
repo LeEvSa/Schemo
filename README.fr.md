@@ -41,7 +41,7 @@ Pour une clé USB ou un PC où tu ne veux rien installer : `Schemo.exe`, la vers
 | Maj + glisser le fond | Sélectionner plusieurs cases |
 | Clic droit | Menu de la case, de la flèche, du cadre ou du fond |
 
-- **Menu Forme** (barre du haut ou panneau) : Automatique, Cycle, Hiérarchie, Processus, Liste, Pyramide, Carte d'idées, Chronologie, Fils narratifs — pour l'onglet entier ou un seul cadre.
+- **Menu Forme** (barre du haut ou panneau) : Automatique, Cycle, Hiérarchie, Processus, Liste, Pyramide, Carte d'idées, Chronologie, Fils narratifs, Réseau — pour l'onglet entier ou un seul cadre.
 - **Cadres** (Ctrl+G) : regroupent des cases, s'ajustent seuls, se replient (chevron) pour alléger les gros diagrammes.
 - **Onglets** en bas comme Excel ; un fichier `.schemo` contient tous les onglets.
 - **Panneau de droite** : forme et couleur des cases, description (en Markdown), style des flèches (droite, courbe, angles, tirets, pointes, texte), thèmes de couleurs, espacement, sens de lecture.
@@ -86,6 +86,7 @@ Chaque ligne écrite reste une ligne. Un lien `[texte](url)` s'affiche souligné
 Des formes faites pour planifier des histoires (menu Forme, pour un onglet ou un cadre) :
 
 - **Fils narratifs** : un cadre par personnage ou intrigue, empilés en bandes. Ses scènes vont de gauche à droite, dans l'ordre où tu les as créées. Les scènes s'alignent dans le temps d'une bande à l'autre : une flèche d'une scène vers une scène d'une autre bande place celle-ci après. Avec le thème Coloré, chaque bande a sa couleur.
+- **Réseau** : les personnages et leurs relations. Les cases reliées restent proches, sans haut ni bas. Les nouveaux liens sont des traits sans pointe (écris la relation sur le lien, ex. « amis ») ; ajoute une pointe dans le panneau pour une relation à sens unique (« trahit »). Ajouter un personnage bouge à peine les autres.
 
 ## Chronologie
 Fichier → **Nouvelle fiche chronologique**, ou la forme **Chronologie** du panneau de droite (pour un onglet ou un cadre).

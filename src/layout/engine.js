@@ -299,6 +299,11 @@ async function forcedArrange(C, shape, items, edges, size) {
     }
     case 'lane': // une bande des Fils narratifs : une seule file (la portée parente aligne ensuite les bandes)
       return [AR.rowArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, 'LR', 'lane')];
+    case 'network': {
+      // départ : la position du calcul précédent, ou l'endroit où la case vient d'être créée
+      const start = (id) => C.prev[id] || C.hints[id] || null;
+      return [AR.networkArrange(items, pairs, edges, size, C.sp, C.orderOf, start, C.measure)];
+    }
     case 'list':
       return [AR.gridArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, dir)];
     case 'pyramid':

@@ -39,7 +39,7 @@ For a USB key or a PC where you don't want to install anything: `Schemo.exe`, th
 | Shift + drag the background | Select several boxes |
 | Right-click | Menu for the box, arrow, frame or background |
 
-- **Shape menu** (top bar or panel): Automatic, Cycle, Hierarchy, Process, List, Pyramid, Mind map, Timeline, Story threads, for the whole tab or a single frame.
+- **Shape menu** (top bar or panel): Automatic, Cycle, Hierarchy, Process, List, Pyramid, Mind map, Timeline, Story threads, Network, for the whole tab or a single frame.
 - **Frames** (Ctrl+G): group boxes, resize themselves, and collapse (chevron) to lighten large diagrams.
 - **Tabs** at the bottom, like Excel; one `.schemo` file holds all the tabs.
 - **Right panel**: box shape and color, description (in Markdown), arrow style (straight, curved, right angles, dashes, heads, text), color themes, spacing, reading direction.
@@ -73,6 +73,7 @@ Each line you write stays a line. A link `[text](url)` shows underlined, without
 Shapes made for planning stories (in the Shape menu, for a tab or a frame):
 
 - **Story threads**: one frame per character or plot line, stacked as bands. Its scenes run left to right, in the order you created them. Scenes line up in time across bands: an arrow from a scene in one band to a scene in another pushes that scene after it. Each band gets its own color with the Colorful theme.
+- **Network**: characters and their relationships. Linked boxes stay close to each other, with no top or bottom. New links are plain lines without arrowheads (write the relationship on the link, e.g. "friends"); add an arrowhead in the panel for a one-way relationship ("betrays"). Adding a character barely moves the others.
 
 ## Timeline
 

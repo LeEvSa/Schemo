@@ -3,7 +3,7 @@ import { tr } from './i18n.js';
 import { defaultColors } from './render/themes.js';
 
 export const SHAPES = ['rounded', 'rect', 'pill', 'ellipse', 'circle', 'diamond', 'hexagon', 'parallelogram'];
-export const LAYOUT_SHAPES = ['auto', 'cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial', 'timeline', 'threads'];
+export const LAYOUT_SHAPES = ['auto', 'cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial', 'timeline', 'threads', 'network'];
 // Formes qui font de leurs cadres des bandes (Fils narratifs) : un cadre qui en hérite range son contenu en file.
 export const FRAME_LAYOUTS = { threads: 'lane' };
 export const DIRECTIONS = ['mixed', 'TB', 'LR'];

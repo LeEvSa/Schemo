@@ -57,6 +57,8 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
 - Formes pour histoires (2026-11-16) : `model.effectiveShape` donne la forme d'une portée ; un cadre qui hérite de Fils narratifs (`threads`)
   devient une bande (`lane`, rangée en file par `AR.rowArrange`). `engine.threadsArrange` aligne ensuite les scènes de toutes les bandes
   sur des colonnes communes (plus long chemin : ordre de la bande + flèches entre bandes) et déplace le contenu des bandes (`moveSubtree`).
+  Réseau (`network`) : `AR.networkArrange`, forces (attraction des liens, répulsion, légère gravité) partant des positions précédentes
+  (`tab.positions`), puis on écarte les cases qui se chevauchent ; `app.linkProps` y crée des liens sans pointe.
 - Flèches : chaque bout est une case ou un cadre (`model.canLink`, refusé entre un cadre et son contenu). Une flèche devenue interne
   (case glissée dans le cadre relié) n'est plus dessinée mais reste, et revient si la case ressort. `renderer.itemBox` = case ou cadre.
 - `src/render/renderer.js` : SVG, caméra, animation 380 ms (positions interpolées), poignées « + », aperçu de lien.

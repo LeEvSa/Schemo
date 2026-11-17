@@ -15,7 +15,7 @@ export const SHAPE_LABELS = labels({
 export const LAYOUT_LABELS = labels({
   auto: 'Automatique', cycle: 'Cycle', hierarchy: 'Hiérarchie', process: 'Processus',
   list: 'Liste', pyramid: 'Pyramide', radial: 'Carte d’idées', timeline: 'Chronologie',
-  threads: 'Fils narratifs',
+  threads: 'Fils narratifs', network: 'Réseau',
 });
 
 const LAYOUT_HELP = labels({
@@ -27,15 +27,16 @@ const LAYOUT_HELP = labels({
   pyramid: 'Étages empilés, du plus petit au plus large.',
   radial: 'Une idée au centre, les autres tout autour.',
   timeline: 'Les cases suivent une ligne du temps, classées toutes seules par date.',
+  network: 'Personnages et relations : les cases reliées se rapprochent, sans haut ni bas. Les nouveaux liens sont des traits sans pointe.',
   threads: 'Un cadre par personnage ou intrigue : ses scènes vont de gauche à droite, alignées dans le temps avec celles des autres fils.',
 });
 
-const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', inherit: 'sparkle' };
+const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', inherit: 'sparkle' };
 
 const ROLE_WORDS = labels({
   cycle: 'dans un cycle (cercle)', ray: 'accrochée à un cycle', tree: 'dans une hiérarchie', chain: 'dans un processus',
   layered: 'dans un schéma à embranchements', single: 'seule (pas encore reliée)', pinned: 'épinglée à la main',
-  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', free: 'libre',
+  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', network: 'dans un réseau', free: 'libre',
 });
 
 function shapeIcon(shape) {

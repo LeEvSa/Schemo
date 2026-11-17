@@ -458,6 +458,85 @@ export function radialArrange(items, pairs, edges, size, sp, orderOf) {
   return A;
 }
 
+// ---------- Réseau (personnages et relations) ----------
+// Disposition « en toile » : les cases reliées s'attirent, toutes se repoussent ; pas de haut ni de bas.
+// start(id) : position de départ connue (calcul précédent), pour que l'ajout d'une case ne bouscule pas tout.
+export function networkArrange(items, pairs, edges, size, sp, orderOf, start, measure) {
+  const A = emptyArrangement();
+  const n = items.length;
+  const ids = [...items].sort((a, b) => orderOf(a) - orderOf(b));
+  const idx = new Map(ids.map((id, i) => [id, i]));
+  const nb = ids.map(() => []);
+  for (const { u, v } of pairs) {
+    if (!idx.has(u) || !idx.has(v)) continue;
+    nb[idx.get(u)].push(idx.get(v));
+    nb[idx.get(v)].push(idx.get(u));
+  }
+  const W = ids.map((id) => size(id).w), H = ids.map((id) => size(id).h);
+  const avg = ids.reduce((s, id, i) => s + Math.hypot(W[i], H[i]), 0) / Math.max(1, n);
+  const lw = maxLabelWidth(edges, measure); // le texte des liens doit tenir entre les cases
+  const k = avg * 0.5 + sp.level * 1.1 + lw * 0.45;
+  const X = new Array(n), Y = new Array(n);
+  let known = 0;
+  ids.forEach((id, i) => { const p = start(id); if (p) { X[i] = p.x; Y[i] = p.y; known++; } });
+  const R0 = k * Math.sqrt(n) * 0.6;
+  ids.forEach((id, i) => {
+    if (X[i] !== undefined) return;
+    const ref = nb[i].find((j) => X[j] !== undefined);
+    const a = i * 2.399963; // angle d'or : réparti sans hasard
+    if (ref !== undefined) { X[i] = X[ref] + k * Math.cos(a); Y[i] = Y[ref] + k * Math.sin(a); }
+    else { X[i] = R0 * Math.cos(a) * Math.sqrt((i + 1) / n); Y[i] = R0 * Math.sin(a) * Math.sqrt((i + 1) / n); }
+  });
+  const iters = n > 120 ? 160 : 260;
+  let temp = known >= n * 0.6 ? k * 0.35 : k * 1.5;
+  const cool = Math.pow(0.02, 1 / iters);
+  for (let it = 0; it < iters; it++) {
+    const dx = new Float64Array(n), dy = new Float64Array(n);
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      let ex = X[i] - X[j], ey = Y[i] - Y[j];
+      let d = Math.hypot(ex, ey);
+      if (d < 0.01) { ex = (i - j) * 0.01 + 0.01; ey = 0.01; d = Math.hypot(ex, ey); }
+      const f = (k * k) / d;
+      dx[i] += (ex / d) * f; dy[i] += (ey / d) * f; dx[j] -= (ex / d) * f; dy[j] -= (ey / d) * f;
+    }
+    for (let i = 0; i < n; i++) for (const j of nb[i]) {
+      if (j < i) continue;
+      const ex = X[i] - X[j], ey = Y[i] - Y[j], d = Math.max(0.01, Math.hypot(ex, ey));
+      const f = (d * d) / k;
+      dx[i] -= (ex / d) * f; dy[i] -= (ey / d) * f; dx[j] += (ex / d) * f; dy[j] += (ey / d) * f;
+    }
+    let cx = 0, cy = 0;
+    for (let i = 0; i < n; i++) { cx += X[i]; cy += Y[i]; }
+    cx /= n; cy /= n;
+    for (let i = 0; i < n; i++) {
+      dx[i] -= (X[i] - cx) * 0.02 * k / 10; dy[i] -= (Y[i] - cy) * 0.02 * k / 10; // légère gravité : les groupes isolés ne s'éloignent pas
+      const d = Math.hypot(dx[i], dy[i]);
+      if (d > 0) { const m = Math.min(d, temp); X[i] += (dx[i] / d) * m; Y[i] += (dy[i] / d) * m; }
+    }
+    temp *= cool;
+  }
+  // plus aucune case l'une sur l'autre
+  const m = sp.gap * 0.6 + lw * 0.4;
+  for (let pass = 0; pass < 80; pass++) {
+    let moved = false;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+      const ox = (W[i] + W[j]) / 2 + m - Math.abs(X[i] - X[j]);
+      const oy = (H[i] + H[j]) / 2 + m - Math.abs(Y[i] - Y[j]);
+      if (ox <= 0 || oy <= 0) continue;
+      moved = true;
+      if (ox < oy) { const s = (X[i] < X[j] || (X[i] === X[j] && i < j) ? -1 : 1) * ox / 2; X[i] += s; X[j] -= s; }
+      else { const s = (Y[i] < Y[j] || (Y[i] === Y[j] && i < j) ? -1 : 1) * oy / 2; Y[i] += s; Y[j] -= s; }
+    }
+    if (!moved) break;
+  }
+  ids.forEach((id, i) => {
+    A.pos.set(id, { x: X[i], y: Y[i] });
+    A.ctx.set(id, { role: 'network', axis: 'TB', depth: 0, seq: i, seqLen: n, branch: i });
+  });
+  for (const e of edges) if (e.direct) A.hints.set(e.id, { kind: 'straight' });
+  return A;
+}
+
 // Rectangle englobant d'un arrangement (centres + tailles).
 export function arrangementBBox(A, size) {
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
