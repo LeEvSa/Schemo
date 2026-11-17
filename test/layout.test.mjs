@@ -282,5 +282,32 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   check(!t.edges[toBox.id] && !t.edges[frames.id] && t.nodes[a.id], 'cadre dissous : ses flèches partent, ses cases restent');
 }
 
+// Fils narratifs : un cadre = une bande, colonnes communes, une flèche d'une bande à l'autre pousse la scène suivante
+{
+  const t = createTab('fils');
+  t.settings.shape = 'threads';
+  const alice = createGroup(t, { title: 'Alice' }), bob = createGroup(t, { title: 'Bob' });
+  const S = (title, g) => createNode(t, { title, group: g.id });
+  const a1 = S('Départ', alice), a2 = S('La forêt', alice), a3 = S('Le château', alice);
+  const b1 = S('Au village', bob), b2 = S('Rencontre', bob);
+  const loose = createNode(t, { title: 'Idée en vrac' });
+  createEdge(t, a2.id, b2.id);
+  const L = await computeLayout(t, measure, {});
+  const n = (x) => L.nodes.get(x.id), ga = L.groups.get(alice.id), gb = L.groups.get(bob.id);
+  console.log(`• fils narratifs bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'fils : chevauchements');
+  check(n(a1).x < n(a2).x && n(a2).x < n(a3).x, 'fils : scènes d’Alice de gauche à droite');
+  check(n(b2).x > n(a2).x + 1, 'fils : « Rencontre » après « La forêt » (flèche entre bandes)');
+  check(Math.abs(n(b1).x - n(a1).x) < 1, 'fils : 1re colonne commune');
+  check(Math.abs(ga.w - gb.w) < 1 && Math.abs(ga.x - gb.x) < 1, 'fils : bandes de même largeur, alignées');
+  check(gb.y >= ga.y + ga.h - 1, 'fils : Bob sous Alice');
+  check(n(a1).ctx.role === 'lane' && n(a1).ctx.branch !== n(b1).ctx.branch, 'fils : une couleur par bande');
+  check(n(loose).y > gb.y + gb.h, 'fils : case hors bande sous les bandes');
+  for (const x of [a1, a2, a3]) {
+    const p = n(x);
+    check(p.x - p.w / 2 >= ga.x && p.x + p.w / 2 <= ga.x + ga.w && p.y - p.h / 2 >= ga.y && p.y + p.h / 2 <= ga.y + ga.h, 'fils : scène dans sa bande');
+  }
+}
+
 console.log(failures ? `\n${failures} échec(s)` : '\nTous les tests passent.');
 process.exit(failures ? 1 : 0);

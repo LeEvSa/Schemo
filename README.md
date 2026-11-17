@@ -39,7 +39,7 @@ For a USB key or a PC where you don't want to install anything: `Schemo.exe`, th
 | Shift + drag the background | Select several boxes |
 | Right-click | Menu for the box, arrow, frame or background |
 
-- **Shape menu** (top bar or panel): Automatic, Cycle, Hierarchy, Process, List, Pyramid, Mind map, Timeline, for the whole tab or a single frame.
+- **Shape menu** (top bar or panel): Automatic, Cycle, Hierarchy, Process, List, Pyramid, Mind map, Timeline, Story threads, for the whole tab or a single frame.
 - **Frames** (Ctrl+G): group boxes, resize themselves, and collapse (chevron) to lighten large diagrams.
 - **Tabs** at the bottom, like Excel; one `.schemo` file holds all the tabs.
 - **Right panel**: box shape and color, description (in Markdown), arrow style (straight, curved, right angles, dashes, heads, text), color themes, spacing, reading direction.
@@ -67,6 +67,12 @@ Globe button (FR / EN) at the top right, or File → "Langue · Language". The c
 Under its title, a box can have a description written in Markdown (right panel, or Shift+Enter in the box):
 `**bold**`, `*italic*`, `` `code` ``, `~~strikethrough~~`, `# heading`, `- list`, `1. list`, `- [ ] checkbox`, `> quote`, `---` for a line.
 Each line you write stays a line. A link `[text](url)` shows underlined, without opening. Sub-points from older files become a list.
+
+## Stories
+
+Shapes made for planning stories (in the Shape menu, for a tab or a frame):
+
+- **Story threads**: one frame per character or plot line, stacked as bands. Its scenes run left to right, in the order you created them. Scenes line up in time across bands: an arrow from a scene in one band to a scene in another pushes that scene after it. Each band gets its own color with the Colorful theme.
 
 ## Timeline
 

@@ -250,6 +250,21 @@ export function snakeArrange(order, edges, size, sp, axis, measure) {
   return A;
 }
 
+// ---------- File simple (bande des Fils narratifs, colonne du Tableau) ----------
+export function rowArrange(order, edges, size, sp, axis, role) {
+  const A = emptyArrangement();
+  const n = order.length;
+  let acc = 0;
+  order.forEach((id, i) => {
+    const s = size(id), len = axis === 'LR' ? s.w : s.h;
+    A.pos.set(id, axis === 'LR' ? { x: acc + len / 2, y: 0 } : { x: 0, y: acc + len / 2 });
+    acc += len + (axis === 'LR' ? sp.arrow : sp.gap * 0.5);
+    A.ctx.set(id, { role, axis, depth: 0, seq: i, seqLen: n, branch: i });
+  });
+  for (const e of edges) if (e.direct) A.hints.set(e.id, { kind: 'straight' });
+  return A;
+}
+
 // ---------- Liste (grille de blocs) ----------
 export function gridArrange(order, edges, size, sp, axis) {
   const A = emptyArrangement();

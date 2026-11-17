@@ -2,7 +2,7 @@
 import { tr, getLang, setLang, systemLang, LANGS } from './i18n.js';
 import {
   createDoc, createTab, createNode, createEdge, createGroup, deleteItems, orderBeside, isInsideGroup,
-  normalizeDoc, serializeDoc, snapshotDoc, restoreSnapshot, uid, LAYOUT_SHAPES, canLink,
+  normalizeDoc, serializeDoc, snapshotDoc, restoreSnapshot, uid, LAYOUT_SHAPES, canLink, effectiveShape,
 } from './model.js';
 import { computeLayout, positionsOf } from './layout/engine.js';
 import { makeMeasurer } from './layout/sizing.js';
@@ -341,14 +341,7 @@ class App {
 
   scopeShapeOf(id) {
     const t = this.tab;
-    let cur = (t.nodes[id] || t.groups[id] || {}).group || null;
-    const seen = new Set();
-    while (cur && t.groups[cur] && !seen.has(cur)) {
-      seen.add(cur);
-      if (t.groups[cur].shape && t.groups[cur].shape !== 'inherit') return t.groups[cur].shape;
-      cur = t.groups[cur].group;
-    }
-    return t.settings.shape;
+    return effectiveShape(t, (t.nodes[id] || t.groups[id] || {}).group || null);
   }
 
   handleActionsFor(id) {
@@ -1321,7 +1314,7 @@ class App {
   }
 }
 
-export const LAYOUT_ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', inherit: 'sparkle' };
+export const LAYOUT_ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', inherit: 'sparkle' };
 
 const BRAND_SVG = '<svg viewBox="0 0 32 32" width="22" height="22"><defs><linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#7c3aed"/></linearGradient></defs><rect x="1" y="1" width="30" height="30" rx="8" fill="url(#bg1)"/><path d="M16 7.5a8.5 8.5 0 0 1 7.4 12.7M8.6 20.2A8.5 8.5 0 0 1 16 7.5M23.4 20.2a8.5 8.5 0 0 1-14.8 0" fill="none" stroke="#fff" stroke-width="1.6" stroke-opacity=".7"/><rect x="12" y="4.5" width="8" height="6" rx="2" fill="#fff"/><rect x="19.5" y="17.5" width="8" height="6" rx="2" fill="#fff"/><rect x="4.5" y="17.5" width="8" height="6" rx="2" fill="#fff"/></svg>';
 

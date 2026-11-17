@@ -54,6 +54,9 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   `elk` (coudes en points virtuels animés), `straight`, `chord`. `src/render/edges.js` recalcule les tracés à chaque image.
 - Chronologie (forme imposée `timeline`) : `layout/dates.js` lit la date ou la période libre `node.date` (`parseSpan` → `{start, end}`) pour classer ; `AR.timelineArrange` place les cases et rend
   `A.timeline` (remonte dans `L.timelines`, compté dans les boîtes englobantes) ; `draw.timelineGeometry` recalcule la ligne depuis les positions courantes.
+- Formes pour histoires (2026-11-16) : `model.effectiveShape` donne la forme d'une portée ; un cadre qui hérite de Fils narratifs (`threads`)
+  devient une bande (`lane`, rangée en file par `AR.rowArrange`). `engine.threadsArrange` aligne ensuite les scènes de toutes les bandes
+  sur des colonnes communes (plus long chemin : ordre de la bande + flèches entre bandes) et déplace le contenu des bandes (`moveSubtree`).
 - Flèches : chaque bout est une case ou un cadre (`model.canLink`, refusé entre un cadre et son contenu). Une flèche devenue interne
   (case glissée dans le cadre relié) n'est plus dessinée mais reste, et revient si la case ressort. `renderer.itemBox` = case ou cadre.
 - `src/render/renderer.js` : SVG, caméra, animation 380 ms (positions interpolées), poignées « + », aperçu de lien.

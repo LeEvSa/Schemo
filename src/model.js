@@ -3,7 +3,9 @@ import { tr } from './i18n.js';
 import { defaultColors } from './render/themes.js';
 
 export const SHAPES = ['rounded', 'rect', 'pill', 'ellipse', 'circle', 'diamond', 'hexagon', 'parallelogram'];
-export const LAYOUT_SHAPES = ['auto', 'cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial', 'timeline'];
+export const LAYOUT_SHAPES = ['auto', 'cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial', 'timeline', 'threads'];
+// Formes qui font de leurs cadres des bandes (Fils narratifs) : un cadre qui en hérite range son contenu en file.
+export const FRAME_LAYOUTS = { threads: 'lane' };
 export const DIRECTIONS = ['mixed', 'TB', 'LR'];
 export const SPACINGS = ['compact', 'normal', 'aere'];
 export const GRAD_DIRS = ['h', 'v', 'd'];
@@ -75,6 +77,16 @@ export function parentOf(tab, id) {
 }
 
 // Vrai si `gid` est `ancestor` ou un de ses descendants.
+// Forme effective d'une portée (null = l'onglet) : la sienne, sinon celle héritée du cadre parent ;
+// un cadre directement dans des Fils narratifs devient une bande ('lane').
+export function effectiveShape(tab, scope, depth = 0) {
+  const g = scope ? tab.groups[scope] : null;
+  if (!g || depth > 60) return tab.settings.shape || 'auto';
+  if (g.shape && g.shape !== 'inherit') return g.shape;
+  const parent = effectiveShape(tab, g.group || null, depth + 1);
+  return FRAME_LAYOUTS[parent] || parent;
+}
+
 export function isInsideGroup(tab, gid, ancestor) {
   let cur = gid;
   const seen = new Set();

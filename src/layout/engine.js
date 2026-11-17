@@ -7,6 +7,7 @@ import { fitUniform, collapsedSize, groupTitleWidth } from './sizing.js';
 import * as AR from './arrange.js';
 import { layeredArrange } from './layered.js';
 import { chronoOrder } from './dates.js';
+import { effectiveShape } from '../model.js';
 
 export const GP = 16; // marge intérieure d'un cadre
 export const GT = 36; // hauteur réservée au titre d'un cadre
@@ -49,16 +50,7 @@ function buildContext(tab, measure, opts) {
   C.orderOf = (id) => (nodes[id] || groups[id] || { order: 0 }).order;
   C.pinOf = (id) => (nodes[id] || groups[id] || {}).pin || null;
   C.parentScope = (id) => (nodes[id] || groups[id] || {}).group || null;
-  C.shapeOf = (scope) => {
-    let cur = scope;
-    const seen = new Set();
-    while (cur && groups[cur] && !seen.has(cur)) {
-      seen.add(cur);
-      if (groups[cur].shape && groups[cur].shape !== 'inherit') return groups[cur].shape;
-      cur = groups[cur].group;
-    }
-    return settings.shape || 'auto';
-  };
+  C.shapeOf = (scope) => effectiveShape(tab, scope);
   const visible = [];
   for (const g of Object.values(groups)) if (!outerCollapsed(g.group)) visible.push(g.id);
   for (const n of Object.values(nodes)) if (!outerCollapsed(n.group)) visible.push(n.id);
@@ -113,7 +105,7 @@ function buildContext(tab, measure, opts) {
     const u = itemAt(lca, a), v = itemAt(lca, b);
     if (u === v) continue;
     if (!C.scopeEdges.has(lca)) C.scopeEdges.set(lca, []);
-    C.scopeEdges.get(lca).push({ id: e.id, u, v, label: e.label || '', direct: u === a && v === b });
+    C.scopeEdges.get(lca).push({ id: e.id, u, v, label: e.label || '', arrows: e.arrows || 'end', direct: u === a && v === b });
   }
   return C;
 }
@@ -305,6 +297,8 @@ async function forcedArrange(C, shape, items, edges, size) {
       if (chains) return [AR.snakeArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, axis, C.measure)];
       return [await layeredArrange(items, edges.map((e) => ({ ...e, route: e.direct })), size, C.sp, axis, C.orderOf, C.measure)];
     }
+    case 'lane': // une bande des Fils narratifs : une seule file (la portée parente aligne ensuite les bandes)
+      return [AR.rowArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, 'LR', 'lane')];
     case 'list':
       return [AR.gridArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, dir)];
     case 'pyramid':
@@ -493,6 +487,104 @@ function resultBBox(R) {
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
 }
 
+// Déplace un élément d'un résultat déjà calculé, avec tout ce qu'il contient s'il est un cadre.
+function moveSubtree(C, R, id, dx, dy) {
+  if (!dx && !dy) return;
+  const inside = (x) => { let cur = x, g = 0; while (cur && g++ < 100) { if (cur === id) return true; cur = C.parentScope(cur); } return false; };
+  for (const [k, n] of R.nodes) if (inside(k)) R.nodes.set(k, { ...n, x: n.x + dx, y: n.y + dy });
+  for (const [k, g] of R.groups) if (inside(k)) R.groups.set(k, { ...g, x: g.x + dx, y: g.y + dy });
+  for (const [k, o] of R.origins) if (inside(k)) R.origins.set(k, { x: o.x + dx, y: o.y + dy });
+}
+
+const boxIn = (R, id) => {
+  const n = R.nodes.get(id);
+  if (n) return { x: n.x, y: n.y, w: n.w, h: n.h };
+  const g = R.groups.get(id);
+  return g ? { x: g.x + g.w / 2, y: g.y + g.h / 2, w: g.w, h: g.h } : null;
+};
+
+// ---------- Fils narratifs ----------
+// Chaque cadre est une bande (un personnage, une intrigue) ; ses scènes vont de gauche à droite. Les colonnes sont
+// communes à toutes les bandes : une scène se place après la précédente de sa bande et après toute scène qui mène
+// à elle par une flèche, même dans une autre bande. Ce qui n'est dans aucune bande fait une rangée en dessous.
+function threadsArrange(C, scope, free, sizes, inner, sizeNodes) {
+  const A = AR.emptyArrangement();
+  const isLane = (id) => C.groups[id] && !C.groups[id].collapsed && inner.has(id) && C.shapeOf(id) === 'lane';
+  const lanes = free.filter(isLane);
+  const loose = free.filter((id) => !isLane(id));
+  sizeNodes(loose);
+  const rows = lanes.map((lid) => {
+    const R = inner.get(lid);
+    const items = (C.children.get(lid) || []).filter((id) => !C.pinOf(id) && boxIn(R, id))
+      .sort((a, b) => boxIn(R, a).x - boxIn(R, b).x);
+    return { lid, R, items, box: (id) => boxIn(R, id) };
+  });
+  rows.push({ lid: null, R: null, items: loose, box: (id) => sizes.get(id) });
+
+  const rowOf = new Map();
+  rows.forEach((r, ri) => r.items.forEach((id) => rowOf.set(id, ri)));
+  const ownerOf = (id) => { let cur = id, g = 0; while (cur && !rowOf.has(cur) && g++ < 100) cur = C.parentScope(cur); return cur && rowOf.has(cur) ? cur : null; };
+  const preds = new Map([...rowOf.keys()].map((id) => [id, new Set()]));
+  for (const r of rows) for (let i = 1; i < r.items.length; i++) preds.get(r.items[i]).add(r.items[i - 1]);
+  for (const ve of C.visibleEdges) {
+    const a = ownerOf(ve.a), b = ownerOf(ve.b);
+    if (a && b && a !== b) preds.get(b).add(a);
+  }
+  // colonne = plus long chemin ; une boucle est coupée à la scène la plus ancienne
+  const col = new Map();
+  const ids = [...rowOf.keys()].sort((a, b) => C.orderOf(a) - C.orderOf(b));
+  const pending = new Set(ids);
+  while (pending.size) {
+    let next = ids.find((id) => pending.has(id) && [...preds.get(id)].every((p) => col.has(p)));
+    if (!next) next = ids.find((id) => pending.has(id));
+    col.set(next, Math.max(-1, ...[...preds.get(next)].filter((p) => col.has(p)).map((p) => col.get(p))) + 1);
+    pending.delete(next);
+  }
+  for (const r of rows) for (let i = 1; i < r.items.length; i++) {
+    col.set(r.items[i], Math.max(col.get(r.items[i]), col.get(r.items[i - 1]) + 1));
+  }
+  const ncol = Math.max(-1, ...col.values()) + 1;
+  const colW = new Array(ncol).fill(0);
+  for (const r of rows) for (const id of r.items) colW[col.get(id)] = Math.max(colW[col.get(id)], r.box(id).w);
+  const gap = C.sp.arrow;
+  const colX = [];
+  let acc = 0;
+  for (let c = 0; c < ncol; c++) { colX[c] = acc + colW[c] / 2; acc += colW[c] + (colW[c] ? gap : 0); }
+  const totalW = Math.max(0, acc - gap);
+  let W = Math.max(totalW + 2 * GP, 150);
+  for (const r of rows) if (r.lid) W = Math.max(W, groupTitleWidth(C.groups[r.lid], C.measure));
+
+  let y = 0;
+  const laneGap = C.sp.gap * 0.5;
+  rows.forEach((r, ri) => {
+    if (!r.lid && !r.items.length) return;
+    const hMax = Math.max(0, ...r.items.map((id) => r.box(id).h));
+    if (r.lid) {
+      for (const id of r.items) {
+        const b = r.box(id);
+        moveSubtree(C, r.R, id, colX[col.get(id)] - b.x, hMax / 2 - b.y);
+        if (C.nodes[id]) r.R.ctx.set(id, { role: 'lane', axis: 'LR', depth: 0, seq: col.get(id), seqLen: ncol, branch: ri });
+      }
+      r.R.w = W - 2 * GP;
+      r.R.h = hMax;
+      const h = Math.max(hMax + GT + GP, 84);
+      sizes.set(r.lid, { w: W, h });
+      A.pos.set(r.lid, { x: W / 2, y: y + h / 2 });
+      y += h + laneGap;
+    } else {
+      y += laneGap;
+      for (const id of r.items) {
+        A.pos.set(id, { x: GP + colX[col.get(id)], y: y + hMax / 2 });
+        A.ctx.set(id, { role: 'lane', axis: 'LR', depth: 0, seq: col.get(id), seqLen: ncol, branch: ri });
+      }
+      y += hMax;
+    }
+  });
+  // une flèche d'une bande à l'autre : courbe
+  for (const e of C.scopeEdges.get(scope) || []) A.hints.set(e.id, { kind: 'curve' });
+  return A;
+}
+
 async function layoutScope(C, scope) {
   const items = C.children.get(scope) || [];
   const sizes = new Map();
@@ -530,6 +622,8 @@ async function layoutScope(C, scope) {
       const cs = new Set(comp);
       parts.push(await autoArrange(C, comp, freeEdges.filter((e) => cs.has(e.u) && cs.has(e.v)), size));
     }
+  } else if (shape === 'threads') {
+    parts.push(threadsArrange(C, scope, free, sizes, inner, sizeNodes));
   } else {
     sizeNodes(free);
     parts.push(...(await forcedArrange(C, shape, free, freeEdges, size)));

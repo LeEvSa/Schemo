@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.1 (2026-11-16)
+- **Story threads** shape: one frame per character or plot line, stacked as bands. Scenes run left to right and line up in time across bands; an arrow from one band to another pushes the scene after it. The + adds a scene before or after, without an arrow.
+
 ## 2.2 (2026-11-09)
 - **Dark background for exports**: PNG, SVG and PDF can be exported on a dark background (the same as the canvas in dark mode). Arrows, frames and the timeline then take their dark-mode colors; boxes keep theirs. PNG and SVG keep the white and transparent choices.
 
