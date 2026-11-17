@@ -96,7 +96,7 @@ Des formes faites pour planifier des histoires (menu Forme, pour un onglet ou un
 Fichier → **Nouvelle fiche chronologique**, ou la forme **Chronologie** du panneau de droite (pour un onglet ou un cadre).
 Sélectionne une case et écris sa date dans le champ **Date** : `2026-03-15`, `15/03/2026`, `mars 2026`, `T1 2026`, `1967`, `500 av. J.-C.`, `Jour 3`, `14h30`.
 Une période marche aussi : `de l'an 2000 à l'an 2010`, `2000-2010`, `du 3 au 15 mars 2026`, `mars à juin 2026`, `depuis 2010`, `années 90`, `XXe siècle`. Une bande la montre sur la ligne, et le texte sous le champ dit si Schémo a compris.
-Les cases se classent toutes seules et ta date s'affiche telle que tu l'as écrite. Les cases sont espacées également : la distance n'est pas à l'échelle du temps.
+Les cases se classent toutes seules et ta date s'affiche telle que tu l'as écrite. Par défaut, les cases sont espacées également. Sans rien sélectionner, la section **Ligne du temps** du panneau passe **À l'échelle** : l'écart entre deux cases suit le temps, des repères (années, mois, jours ou heures) s'affichent sur la ligne, et les cases trop proches passent sur une autre rangée. **Auto** choisit l'unité selon la durée ; choisis-en une (Heures à Siècles) pour fixer 1 unité = 110 px.
 Une case sans date reste après la précédente. Une case glissée à la main est épinglée et sort de la ligne ; clique sur la punaise pour l'y remettre.
 
 

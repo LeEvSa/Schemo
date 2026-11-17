@@ -296,7 +296,10 @@ export function gridArrange(order, edges, size, sp, axis) {
 // ---------- Chronologie ----------
 // Horizontale : cases en alternance de part et d'autre de la ligne (compact), la date du côté opposé à sa case.
 // Verticale : une seule colonne, les dates à gauche de la ligne. La ligne suit les cases à l'affichage : voir timelineGeometry.
-export function timelineArrange(order, edges, size, sp, axis, dateOf, measure) {
+// Unités de la ligne à l'échelle, en « jours » de dates.js (un an = 372, un mois = 31).
+export const TIME_UNITS = { hour: 1 / 24, day: 1, month: 31, year: 372, decade: 3720, century: 37200, millennium: 372000 };
+
+export function timelineArrange(order, edges, size, sp, axis, dateOf, measure, scale = null) {
   const A = emptyArrangement();
   const n = order.length;
   const lw = (id) => (dateOf(id) ? measure(dateOf(id), 12.5, 650) : 0);
@@ -308,6 +311,11 @@ export function timelineArrange(order, edges, size, sp, axis, dateOf, measure) {
     if (span) prevStart = span.start;
     return { id, side, label: dateOf(id), k: prevStart, end: span ? span.end : null };
   };
+  if (scale && scale.mode === 'scale' && n > 1) {
+    const res = scaledTimeline(A, order, edges, size, sp, axis, member, scale);
+    if (res) return res;
+    prevStart = -Infinity;
+  }
   let bb;
   if (axis === 'LR') {
     const stem = Math.max(40, 46 * sp.f), minStep = Math.max(44, 60 * sp.f);
@@ -340,6 +348,56 @@ export function timelineArrange(order, edges, size, sp, axis, dateOf, measure) {
     bb = { x: -(wide + 16), y: ys[0] - 24, w: wide + 22, h: ys[n - 1] - ys[0] + 60 };
     A.timeline = { axis, stem, members, bb };
   }
+  order.forEach((id, i) => A.ctx.set(id, { role: 'timeline', axis, depth: 0, seq: i, seqLen: n, branch: i }));
+  for (const e of edges) if (e.direct) A.hints.set(e.id, { kind: 'curve' });
+  return A;
+}
+
+// Ligne à l'échelle : l'écart entre deux cases suit le temps. Le point de chaque case reste à sa vraie place ; une case
+// qui chevaucherait sa voisine passe sur une rangée plus éloignée de la ligne (au-dessus, en dessous, puis plus loin).
+// Rend null s'il n'y a aucune date comprise (on garde alors l'espacement régulier).
+function scaledTimeline(A, order, edges, size, sp, axis, member, scale) {
+  const n = order.length;
+  const ms = order.map((id) => member(id, 1));
+  const members = [];
+  const firstK = ms.find((m) => Number.isFinite(m.k));
+  if (!firstK) return null;
+  for (const m of ms) if (!Number.isFinite(m.k)) m.k = firstK.k; // sans date avant la première date : au même endroit
+  const k0 = Math.min(...ms.map((m) => m.k)), k1 = Math.max(...ms.map((m) => (Number.isFinite(m.end) ? Math.max(m.k, m.end) : m.k)));
+  const span = Math.max(k1 - k0, 1 / 24);
+  let unit = scale.unit && TIME_UNITS[scale.unit] ? scale.unit : null;
+  if (!unit) unit = ['hour', 'day', 'month', 'year', 'decade', 'century'].find((u) => span / TIME_UNITS[u] <= 14) || 'millennium';
+  const along = (id) => (axis === 'LR' ? size(id).w : size(id).h);
+  const avg = order.reduce((s, id) => s + along(id), 0) / n;
+  // Auto : une longueur qui tient à peu près comme l'espacement régulier ; une unité choisie : 110 px par unité
+  let ppk = scale.unit && TIME_UNITS[scale.unit] ? 110 / TIME_UNITS[unit] : Math.min(6000, Math.max(500, n * (avg + sp.gap) * 0.9)) / span;
+  ppk = Math.min(ppk, 40000 / span);
+  const stem = Math.max(40, 46 * sp.f);
+  const gap = sp.gap * 0.5;
+  const rowsUsed = new Map();
+  const free = (row, a0, a1) => (rowsUsed.get(row) || []).every(([p, q]) => a1 <= p || a0 >= q);
+  const tries = axis === 'LR' ? [-1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6] : [1, 2, 3, 4, 5, 6, 7, 8];
+  const cross = Math.max(...order.map((id) => (axis === 'LR' ? size(id).h : size(id).w)));
+  let farthest = 1;
+  order.forEach((id, i) => {
+    const m = ms[i];
+    const a = (m.k - k0) * ppk;
+    const half = along(id) / 2;
+    let row = tries.find((r) => free(r, a - half - gap, a + half + gap));
+    if (row === undefined) row = tries[tries.length - 1];
+    (rowsUsed.get(row) || rowsUsed.set(row, []).get(row)).push([a - half - gap, a + half + gap]);
+    const side = row < 0 ? -1 : 1, level = Math.abs(row);
+    farthest = Math.max(farthest, level);
+    m.side = side;
+    m.row = level;
+    m.stem = stem + (level - 1) * (cross + gap);
+    const s = size(id);
+    A.pos.set(id, axis === 'LR' ? { x: a, y: side * (m.stem + s.h / 2) } : { x: m.stem + s.w / 2, y: a });
+    members.push(m);
+  });
+  const L = (k1 - k0) * ppk;
+  const bb = axis === 'LR' ? { x: -30, y: -26, w: L + 72, h: 52 } : { x: -70, y: -24, w: 76, h: L + 60 };
+  A.timeline = { axis, stem, members, bb, scale: { ppk, unit } };
   order.forEach((id, i) => A.ctx.set(id, { role: 'timeline', axis, depth: 0, seq: i, seqLen: n, branch: i }));
   for (const e of edges) if (e.direct) A.hints.set(e.id, { kind: 'curve' });
   return A;

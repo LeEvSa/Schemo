@@ -1,5 +1,5 @@
 // Construction des éléments SVG (partagée par l'affichage en direct et l'export).
-import { tr } from '../i18n.js';
+import { tr, getLang } from '../i18n.js';
 import { shapePath } from './geometry.js';
 import { FONT, MONO, T } from '../layout/sizing.js';
 
@@ -131,11 +131,12 @@ export function timelineGeometry(tl, boxOf) {
   const horiz = tl.axis === 'LR';
   const marks = tl.members.map((m) => ({ m, b: boxOf(m.id) })).filter((x) => x.b);
   if (!marks.length) return null;
-  const guesses = marks.map(({ m, b }) => (horiz ? b.y - m.side * (b.h / 2 + tl.stem) : b.x - m.side * (b.w / 2 + tl.stem))).sort((p, q) => p - q);
+  const stemOf = (m) => m.stem ?? tl.stem;
+  const guesses = marks.map(({ m, b }) => (horiz ? b.y - m.side * (b.h / 2 + stemOf(m)) : b.x - m.side * (b.w / 2 + stemOf(m)))).sort((p, q) => p - q);
   const at = r2(guesses[Math.floor(guesses.length / 2)]);
   const along = marks.map(({ b }) => (horiz ? b.x : b.y));
   const ticks = marks.map(({ m, b }) => (horiz
-    ? { id: m.id, label: m.label, x: r2(b.x), y: at, ex: r2(b.x), ey: r2(b.y - m.side * b.h / 2), lx: r2(b.x), ly: m.side < 0 ? at + 21 : at - 12 }
+    ? { id: m.id, label: m.label, x: r2(b.x), y: at, ex: r2(b.x), ey: r2(b.y - m.side * b.h / 2), lx: r2(b.x), ly: (m.side < 0 ? at + 21 : at - 12) - m.side * 15 * ((m.row || 1) - 1) }
     : { id: m.id, label: m.label, x: at, y: r2(b.y), ex: r2(b.x - b.w / 2), ey: r2(b.y), lx: at - 14, ly: r2(b.y + 4.5) }));
   const start = r2(Math.min(...along) - 30), end = r2(Math.max(...along) + 30);
   // Une période : une bande depuis son point jusqu'à sa date de fin, située entre les cases voisines (les cases sont espacées également).
@@ -157,7 +158,58 @@ export function timelineGeometry(tl, boxOf) {
     lanes[lane] = to + 4;
     bands.push({ id: m.id, from: r2(from), to: r2(to), off: [0, 8, -8][lane % 3] });
   });
-  return { horiz, at, start, end, ticks, bands };
+  // à l'échelle, à la verticale : deux dates trop proches, on n'en écrit qu'une
+  if (tl.scale && !horiz) {
+    let last = -Infinity;
+    for (const t of [...ticks].sort((p, q) => p.ly - q.ly)) { if (t.label && t.ly - last < 15) t.label = ''; else if (t.label) last = t.ly; }
+  }
+  const grads = tl.scale ? graduations(tl, marks, along, start, end) : [];
+  return { horiz, at, start, end, ticks, bands, grads };
+}
+
+const monthName = (mo) => new Intl.DateTimeFormat(getLang() === 'en' ? 'en' : 'fr', { month: 'short' }).format(new Date(2000, mo - 1, 1)).replace('.', '');
+const yearLabel = (y) => (y < 0 ? tr('{n} av. J.-C.', { n: -y }) : String(y));
+const firstStep = (steps, len, ppk) => steps.find((s) => s * len * ppk >= 70) ?? steps[steps.length - 1];
+
+// Repères de la ligne à l'échelle (années, mois, jours ou heures), placés d'après une case datée.
+function graduations(tl, marks, along, start, end) {
+  const { ppk, unit } = tl.scale;
+  const i = marks.findIndex(({ m }) => Number.isFinite(m.k));
+  if (i < 0 || !(ppk > 0)) return [];
+  const refK = marks[i].m.k, refA = along[i];
+  const kA = refK + (start - refA) / ppk, kB = refK + (end - refA) / ppk;
+  const at = (k) => r2(refA + (k - refK) * ppk);
+  const out = [];
+  const push = (k, label) => { if (k >= kA && k <= kB && out.length < 300) out.push({ p: at(k), label }); };
+  if (['year', 'decade', 'century', 'millennium'].includes(unit)) {
+    const base = { year: 1, decade: 10, century: 100, millennium: 1000 }[unit];
+    const step = base * firstStep([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000], base * 372, ppk);
+    for (let y = Math.ceil(kA / 372 / step) * step; y * 372 <= kB && out.length < 300; y += step) push(y * 372, yearLabel(y));
+  } else if (unit === 'month') {
+    const step = firstStep([1, 2, 3, 6, 12], 31, ppk);
+    let y = Math.floor(kA / 372), mo = 1;
+    for (let guard = 0; guard < 5000 && y * 372 <= kB; guard++) {
+      const k = y * 372 + (mo - 1) * 31;
+      if ((mo - 1) % step === 0) push(k, mo === 1 || !out.length ? monthName(mo) + ' ' + yearLabel(y) : monthName(mo));
+      if (++mo > 12) { mo = 1; y++; }
+    }
+  } else if (unit === 'day') {
+    const step = firstStep([1, 2, 7, 14], 1, ppk);
+    let y = Math.floor(kA / 372), mo = Math.floor((kA - y * 372) / 31) + 1, d = 1;
+    for (let guard = 0; guard < 20000 && y * 372 + (mo - 1) * 31 <= kB; guard++) {
+      const k = y * 372 + (mo - 1) * 31 + d - 1;
+      if (d === 1 || (step < 7 ? (d - 1) % step === 0 : d % step === 1 && d < 29)) push(k, d === 1 || !out.length ? d + ' ' + monthName(mo) : String(d));
+      const last = new Date(Math.max(1, y), mo, 0).getDate();
+      if (++d > last) { d = 1; if (++mo > 12) { mo = 1; y++; } }
+    }
+  } else {
+    const step = firstStep([1, 2, 3, 6, 12], 1 / 24, ppk);
+    for (let h = Math.ceil(kA * 24 / step) * step; h / 24 <= kB && out.length < 300; h += step) {
+      const hh = ((h % 24) + 24) % 24;
+      push(h / 24, String(hh).padStart(2, '0') + ':00');
+    }
+  }
+  return out;
 }
 
 // colors : { line, text } ; dotOf(id) : couleur du point de chaque case.
@@ -184,6 +236,11 @@ export function drawTimeline(parent, geo, colors, dotOf) {
   // la pointe dit dans quel sens le temps avance
   const tip = horiz ? `M${end + 12} ${at}L${end} ${at - 6}L${end} ${at + 6}Z` : `M${at} ${end + 12}L${at - 6} ${end}L${at + 6} ${end}Z`;
   el('path', { d: tip, fill: colors.line }, parent);
+  for (const g of geo.grads || []) {
+    // repère posé sur la ligne, qui s'interrompt derrière lui
+    const lab = el('text', { x: horiz ? g.p : at, y: (horiz ? at : g.p) + 3.8, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 650, fill: colors.text, 'fill-opacity': 0.85, stroke: colors.bg, 'stroke-width': 5, 'stroke-linejoin': 'round', 'paint-order': 'stroke' }, parent);
+    lab.textContent = g.label;
+  }
   for (const b of geo.bands) {
     const pos = at + b.off;
     el('line', { ...(horiz ? { x1: b.from, y1: pos, x2: b.to, y2: pos } : { x1: pos, y1: b.from, x2: pos, y2: b.to }), stroke: dotOf(b.id), 'stroke-width': 7, 'stroke-linecap': 'round', 'stroke-opacity': 0.6 }, parent);

@@ -426,5 +426,34 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   check(L.bbox.w >= 2 * tl.radii[2] - 1, 'cible : les cercles comptent dans la taille du diagramme');
 }
 
+// Chronologie à l'échelle : écarts proportionnels au temps, cases proches empilées, repères sur la ligne
+{
+  const t = createTab('échelle');
+  t.settings.shape = 'timeline';
+  t.settings.timeScale = 'scale';
+  const D = ['2000', '2001', '2010', 'mars 2010', 'juin 2010', '2020'].map((date) => createNode(t, { title: 'Événement ' + date, date }));
+  let L = await computeLayout(t, measure, {});
+  const x = (i) => L.nodes.get(D[i].id).x, y = (i) => L.nodes.get(D[i].id).y;
+  console.log(`• chronologie à l'échelle bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'échelle : chevauchements');
+  const r = (x(2) - x(0)) / (x(1) - x(0));
+  check(Math.abs(r - 10) < 0.2, 'échelle : 10 ans = 10 fois 1 an, trouvé ' + r.toFixed(2));
+  check(Math.abs((x(5) - x(2)) - (x(2) - x(0))) < 1, 'échelle : 2000→2010 = 2010→2020');
+  check(new Set([2, 3, 4].map(y)).size === 3, 'échelle : les cases de 2010 sur des rangées différentes');
+  const tl = L.timelines[0];
+  const box = (id) => { const n = L.nodes.get(id); return n && { x: n.x, y: n.y, w: n.w, h: n.h }; };
+  const geo = timelineGeometry(tl, box);
+  check(geo.grads.length >= 3 && geo.grads.some((g) => g.label === '2010'), 'échelle : repères automatiques (' + geo.grads.map((g) => g.label).join(' ') + ')');
+  check(geo.ticks.every((tk) => Math.abs(tk.x - box(tk.id).x) < 0.01), 'échelle : chaque point sous sa case');
+  // unité choisie : années, 110 px par an
+  t.settings.timeUnit = 'year';
+  L = await computeLayout(t, measure, {});
+  check(Math.abs((x(1) - x(0)) - 110) < 0.5, 'échelle : 1 an = 110 px avec l’unité Années, trouvé ' + Math.round(x(1) - x(0)));
+  check(overlaps(L).length === 0, 'échelle (années) : chevauchements');
+  // relu du fichier
+  const back = normalizeDoc(JSON.parse(serializeDoc({ tabs: [t], active: t.id }))).tabs[0];
+  check(back.settings.timeScale === 'scale' && back.settings.timeUnit === 'year', 'échelle : réglage relu du fichier');
+}
+
 console.log(failures ? `\n${failures} échec(s)` : '\nTous les tests passent.');
 process.exit(failures ? 1 : 0);

@@ -3,7 +3,7 @@ import { tr, labels } from '../i18n.js';
 import { h, icon } from './dom.js';
 import { THEMES, SWATCHES, PALETTE, GRADIENTS, nodeColors, themeOf, monoBase, mix, defaultColors } from '../render/themes.js';
 import { shapePath } from '../render/geometry.js';
-import { SHAPES, LAYOUT_SHAPES } from '../model.js';
+import { SHAPES, LAYOUT_SHAPES, effectiveShape } from '../model.js';
 import { parseSpan } from '../layout/dates.js';
 import { openColorPicker, colorPickerOpen } from './colorpicker.js';
 
@@ -232,6 +232,8 @@ export class Panel {
     const anyPin = [...Object.values(t.nodes), ...Object.values(t.groups)].some((it) => it.pin);
     const forced = ['cycle', 'process', 'list', 'pyramid'].includes(s.shape);
     const painted = Object.values(t.nodes).filter((n) => n.color || n.textColor || n.borderColor).length;
+    const hasTimeline = s.shape === 'timeline' || Object.values(t.groups).some((g) => effectiveShape(t, g.id) === 'timeline');
+    const scaled = s.timeScale === 'scale';
     return h('div', { class: 'p-inner' },
       h('div', { class: 'p-title' }, h('span', null, tr('Onglet')), h('span', { class: 'p-sub' }, t.name)),
       this.section(tr('Forme du diagramme'),
@@ -241,6 +243,12 @@ export class Panel {
         }, icon(ICONS[v], 20), h('span', null, LAYOUT_LABELS[v])))),
         h('p', { class: 'muted small' }, LAYOUT_HELP[s.shape] || ''),
         forced ? h('button', { class: 'btn small wide', title: tr('Ajoute les flèches qui manquent entre les cases, dans l’ordre affiché'), onclick: () => app.connectInOrder(null) }, icon('link', 15), tr('Relier les cases dans l’ordre')) : null),
+      hasTimeline ? this.section(tr('Ligne du temps'),
+        this.seg([['even', tr('Régulier'), tr('Les cases espacées également')], ['scale', tr('À l’échelle'), tr('L’écart entre deux cases suit le temps')]], s.timeScale || 'even', (v) => app.setTabSettings({ timeScale: v }), scaled ? 'seg-gap' : ''),
+        scaled ? this.seg([['auto', tr('Auto')], ['hour', tr('Heures')], ['day', tr('Jours')], ['month', tr('Mois')], ['year', tr('Années')], ['decade', tr('Décennies')], ['century', tr('Siècles')]], s.timeUnit || 'auto', (v) => app.setTabSettings({ timeUnit: v }), 'seg-units') : null,
+        h('p', { class: 'muted small' }, scaled
+          ? tr('L’unité donne les repères de la ligne ; Auto choisit selon la durée. Des cases trop proches passent sur une autre rangée.')
+          : tr('Les cases sont espacées également : l’écart ne suit pas le temps.'))) : null,
       this.section(tr('Sens de lecture'),
         this.seg([['mixed', tr('Mixte'), tr('Hiérarchies de haut en bas, processus de gauche à droite')], ['TB', tr('↓ Vertical'), tr('Tout de haut en bas')], ['LR', tr('→ Horizontal'), tr('Tout de gauche à droite')]], s.direction, (v) => app.setTabSettings({ direction: v }))),
       this.section(tr('Espacement'),

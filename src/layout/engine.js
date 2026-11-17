@@ -263,9 +263,12 @@ async function forcedArrange(C, shape, items, edges, size) {
   const isNode = (id) => !!C.nodes[id];
   if (shape === 'timeline') {
     // « mixte » : horizontale, puis verticale quand elle deviendrait trop longue pour l'écran
-    const axis = dir === 'TB' || (dir !== 'LR' && items.length > 16) ? 'TB' : 'LR';
+    const scaled = C.settings.timeScale === 'scale';
+    // à l'échelle, les cases proches s'empilent : la ligne reste horizontale sauf en sens vertical
+    const axis = dir === 'TB' || (!scaled && dir !== 'LR' && items.length > 16) ? 'TB' : 'LR';
     const dateOf = (id) => (C.nodes[id] && C.nodes[id].date ? C.nodes[id].date.trim() : '');
-    return [AR.timelineArrange(chronoOrder(flowOrder(items, pairs, C.orderOf), dateOf), edges, size, C.sp, axis, dateOf, C.measure)];
+    const scale = scaled ? { mode: 'scale', unit: C.settings.timeUnit === 'auto' ? null : C.settings.timeUnit } : null;
+    return [AR.timelineArrange(chronoOrder(flowOrder(items, pairs, C.orderOf), dateOf), edges, size, C.sp, axis, dateOf, C.measure, scale)];
   }
   if (items.length === 1) return [single(items[0], resolveAxis('chain', dir))];
   switch (shape) {

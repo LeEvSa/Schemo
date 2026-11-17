@@ -9,6 +9,9 @@ export const FRAME_LAYOUTS = { threads: 'lane', board: 'column' };
 export const DIRECTIONS = ['mixed', 'TB', 'LR'];
 export const SPACINGS = ['compact', 'normal', 'aere'];
 export const GRAD_DIRS = ['h', 'v', 'd'];
+// Chronologie : espacement régulier ou à l'échelle du temps, et unité de la ligne à l'échelle
+export const TIME_SCALES = ['even', 'scale'];
+export const TIME_UNITS = ['auto', 'hour', 'day', 'month', 'year', 'decade', 'century'];
 
 let counter = 0;
 export function uid(prefix) {
@@ -17,7 +20,7 @@ export function uid(prefix) {
 }
 
 export function defaultSettings() {
-  return { shape: 'auto', direction: 'mixed', theme: 'bleu', spacing: 'normal', shadow: true, colors: defaultColors() };
+  return { shape: 'auto', direction: 'mixed', theme: 'bleu', spacing: 'normal', shadow: true, colors: defaultColors(), timeScale: 'even', timeUnit: 'auto' };
 }
 
 export function createTab(name) {
@@ -205,6 +208,8 @@ export function normalizeDoc(raw) {
       spacing: pick(s.spacing, SPACINGS, 'normal'),
       shadow: s.shadow !== false,
       colors: normalizeColors(s.colors),
+      timeScale: pick(s.timeScale, TIME_SCALES, 'even'),
+      timeUnit: pick(s.timeUnit, TIME_UNITS, 'auto'),
     };
     let maxOrder = 0;
     for (const g of Object.values(rt.groups || {})) {

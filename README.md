@@ -84,7 +84,7 @@ Shapes made for planning stories (in the Shape menu, for a tab or a frame):
 File → **New timeline sheet**, or the **Timeline** shape in the right panel (for a tab or a frame).
 Select a box and write its date in the **Date** field: `2026-03-15`, `15/03/2026`, `March 2026`, `Q1 2026`, `1967`, `500 BC`, `Day 3`, `14:30`. French works too (`mars 2026`, `T1 2026`, `500 av. J.-C.`).
 Periods work as well: `from 2000 to 2010`, `2000-2010`, `3 to 15 March 2026`, `March to June 2026`, `since 2010`, `1990s`, `20th century`. A band shows them on the line, and the text under the field tells you whether Schémo understood.
-Boxes sort themselves and your date displays as you wrote it. Boxes are evenly spaced: the distance is not to time scale.
+Boxes sort themselves and your date displays as you wrote it. By default boxes are evenly spaced. With nothing selected, the panel's **Time line** section switches to **To scale**: the gap between two boxes follows time, marks (years, months, days or hours) appear on the line, and boxes too close together move to another row. **Auto** picks the unit from the time covered; pick one yourself (Hours to Centuries) to set 1 unit = 110 px.
 A box with no date stays after the previous one. A box dragged by hand is pinned and leaves the line; click the pin to put it back.
 
 ## Development

@@ -54,6 +54,8 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   `elk` (coudes en points virtuels animés), `straight`, `chord`. `src/render/edges.js` recalcule les tracés à chaque image.
 - Chronologie (forme imposée `timeline`) : `layout/dates.js` lit la date ou la période libre `node.date` (`parseSpan` → `{start, end}`) pour classer ; `AR.timelineArrange` place les cases et rend
   `A.timeline` (remonte dans `L.timelines`, compté dans les boîtes englobantes) ; `draw.timelineGeometry` recalcule la ligne depuis les positions courantes.
+  À l'échelle (`settings.timeScale` = `scale`, `timeUnit`, 2026-11-17) : `AR.scaledTimeline` (position = date × `ppk`, rangées empilées,
+  `m.stem`/`m.row` par case) ; repères calculés par `draw.graduations` en unités de `dates.js` (an = 372, mois = 31).
 - Formes pour histoires (2026-11-16) : `model.effectiveShape` donne la forme d'une portée ; un cadre qui hérite de Fils narratifs (`threads`)
   devient une bande (`lane`, rangée en file par `AR.rowArrange`). `engine.threadsArrange` aligne ensuite les scènes de toutes les bandes
   sur des colonnes communes (plus long chemin : ordre de la bande + flèches entre bandes) et déplace le contenu des bandes (`moveSubtree`).
