@@ -64,8 +64,9 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   Arc dramatique (`arc`) : `node.tension` (1 à 5 ou null), `AR.arcTensions` (moyenne des voisines, courbe classique sans aucun niveau) ;
   la courbe passe par `L.timelines` avec `kind: 'arc'` (`draw.timelineGeometry` / `drawTimeline` la dessinent).
   Tableau (`board`) : ses cadres deviennent des colonnes (`column`, file verticale) ; `engine.boardArrange` les aligne, même taille.
-  Arbre généalogique (`family`) : `AR.familyArrange` ; flèche `arrows: 'end'` = parent → enfant, sinon couple. Couples = familles
-  rangées par `tidy` (enfants sous le milieu du couple) ; « + » : enfant (relié aux deux du couple), parent, partenaire.
+  Arbre généalogique (`family`) : `AR.familyArrange` ; flèche `arrows: 'end'` = parent → enfant, sinon couple. Couples (et co-parents d'un même
+  enfant) = familles, une rangée par génération, ajustées en allers-retours haut/bas (chacun sous ses parents, parents au-dessus
+  des enfants) sans chevauchement (blocs placés au plus près de leurs souhaits ; 2026-11-17) ; « + » : enfant (relié aux deux du couple), parent, partenaire.
   Cible (`target`) : `AR.targetArrange`, cercles par distance (liens dans les deux sens) ; cercles dessinés par `L.timelines` (`kind: 'rings'`).
 - Flèches : chaque bout est une case ou un cadre (`model.canLink`, refusé entre un cadre et son contenu). Une flèche devenue interne
   (case glissée dans le cadre relié) n'est plus dessinée mais reste, et revient si la case ressort. `renderer.itemBox` = case ou cadre.

@@ -404,6 +404,28 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   check(hint && hint.kind === 'tree', 'famille : lien parent → enfant à angle droit');
 }
 
+// Arbre généalogique, cas de LeEvSa : deux parents sans trait entre eux, et un couple dont chacun vient d'une famille
+{
+  const t = createTab('famille 2');
+  t.settings.shape = 'family';
+  const P = {};
+  for (const n of ['1', '2', '3', 'A', 'B', 'X', '4', '5']) P[n] = createNode(t, { title: n });
+  const child = (p, c) => createEdge(t, P[p].id, P[c].id);
+  child('1', '2'); child('3', '2'); child('A', 'X'); child('B', 'X');
+  createEdge(t, P['2'].id, P['X'].id, { arrows: 'none' });
+  child('2', '4'); child('X', '4'); child('2', '5'); child('X', '5');
+  const L = await computeLayout(t, measure, {});
+  const n = (k) => L.nodes.get(P[k].id), mid = (a, b) => (n(a).x + n(b).x) / 2;
+  console.log(`• famille (deux familles) bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'famille 2 : chevauchements');
+  check(['1', '3', 'A', 'B'].every((k) => Math.abs(n(k).y - n('1').y) < 1), 'famille 2 : les quatre grands-parents sur une rangée');
+  check(Math.abs(n('2').y - n('X').y) < 1 && n('2').y > n('1').y && n('4').y > n('2').y, 'famille 2 : trois générations');
+  check(Math.abs(Math.abs(n('1').x - n('3').x) - (n('1').w + n('3').w) / 2) < 40, 'famille 2 : 1 et 3 côte à côte (co-parents)');
+  check(mid('1', '3') < mid('A', 'B') && n('2').x < n('X').x, 'famille 2 : 2 du côté de ses parents, X du côté des siens');
+  check(Math.abs(mid('1', '3') - n('2').x) < n('2').w && Math.abs(mid('A', 'B') - n('X').x) < n('X').w, 'famille 2 : chacun sous ses parents');
+  check(Math.abs(mid('4', '5') - mid('2', 'X')) < 2, 'famille 2 : enfants sous le couple');
+}
+
 // Cible : centre = case sans flèche entrante, cercles par distance, case isolée sur le dernier cercle
 {
   const t = createTab('cible');

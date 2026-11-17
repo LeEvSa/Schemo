@@ -557,25 +557,45 @@ export function arcArrange(order, edges, size, sp, tensionOf) {
 }
 
 // ---------- Arbre généalogique ----------
-// Un trait sans pointe (ou à double pointe) relie un couple : côte à côte, à la même génération. Une flèche va d'un
-// parent à son enfant. Chaque couple (ou personne seule) est une « famille » ; les familles forment un arbre, les
-// enfants centrés sous le milieu du couple. Une couleur par génération.
+// Une flèche va d'un parent à son enfant ; un trait sans pointe (ou à double pointe) relie un couple. Deux personnes qui
+// ont un enfant ensemble forment aussi un couple, même sans trait. Chaque couple (ou personne seule) est une « famille »
+// posée sur la rangée de sa génération. Les rangées s'ajustent tour à tour de haut en bas (chacun sous le milieu de ses
+// parents) et de bas en haut (les parents au-dessus de leurs enfants), sans que deux familles se chevauchent.
 export function familyArrange(items, edges, size, sp, orderOf) {
   const A = emptyArrangement();
   const set = new Set(items);
   const byOrder = (a, b) => orderOf(a) - orderOf(b);
-  const partners = new Map(items.map((id) => [id, []]));
-  const parents = new Map(items.map((id) => [id, []]));
-  const kids = new Map(items.map((id) => [id, []]));
+  const ids = [...items].sort(byOrder);
+  const partners = new Map(ids.map((id) => [id, new Set()]));
+  const parents = new Map(ids.map((id) => [id, []]));
+  const kids = new Map(ids.map((id) => [id, []]));
   for (const e of edges) {
     if (!set.has(e.u) || !set.has(e.v) || e.u === e.v) continue;
-    if (e.arrows === 'end') { parents.get(e.v).push(e.u); kids.get(e.u).push(e.v); }
-    else { partners.get(e.u).push(e.v); partners.get(e.v).push(e.u); }
+    if (e.arrows === 'end') {
+      if (!parents.get(e.v).includes(e.u)) { parents.get(e.v).push(e.u); kids.get(e.u).push(e.v); }
+    } else { partners.get(e.u).add(e.v); partners.get(e.v).add(e.u); }
   }
-  // familles : personnes reliées par des couples
+  // les parents d'un même enfant sont un couple
+  for (const id of ids) {
+    const ps = parents.get(id);
+    for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) { partners.get(ps[i]).add(ps[j]); partners.get(ps[j]).add(ps[i]); }
+  }
+  // générations : un enfant sous ses parents, un couple sur la même rangée (bornes pour ne pas tourner en rond)
+  const gen = new Map(ids.map((id) => [id, 0]));
+  for (let pass = 0; pass < ids.length + 2; pass++) {
+    let changed = false;
+    for (const id of ids) {
+      let g = gen.get(id);
+      for (const p of parents.get(id)) g = Math.max(g, gen.get(p) + 1);
+      for (const q of partners.get(id)) g = Math.max(g, gen.get(q));
+      if (g !== gen.get(id) && g < ids.length) { gen.set(id, g); changed = true; }
+    }
+    if (!changed) break;
+  }
+  // familles : personnes reliées en couple sur la même génération
   const unitOf = new Map();
   const units = [];
-  for (const id of [...items].sort(byOrder)) {
+  for (const id of ids) {
     if (unitOf.has(id)) continue;
     const comp = [];
     const stack = [id];
@@ -583,59 +603,109 @@ export function familyArrange(items, edges, size, sp, orderOf) {
     while (stack.length) {
       const v = stack.pop();
       comp.push(v);
-      for (const w of partners.get(v)) if (!unitOf.has(w)) { unitOf.set(w, units.length); stack.push(w); }
+      for (const w of partners.get(v)) if (!unitOf.has(w) && gen.get(w) === gen.get(id)) { unitOf.set(w, units.length); stack.push(w); }
     }
-    // ordre dans la famille : on suit la chaîne des couples (deux mariages : la personne au milieu)
+    // ordre dans la famille : la chaîne des couples (deux mariages : la personne au milieu)
     const inComp = new Set(comp);
-    const deg = (v) => partners.get(v).filter((w) => inComp.has(w)).length;
+    const deg = (v) => [...partners.get(v)].filter((w) => inComp.has(w)).length;
     const start = comp.filter((v) => deg(v) <= 1).sort(byOrder)[0] || [...comp].sort(byOrder)[0];
     const seq = [];
     const seen = new Set();
     const walk = (v) => { seen.add(v); seq.push(v); for (const w of [...partners.get(v)].sort(byOrder)) if (inComp.has(w) && !seen.has(w)) walk(w); };
     walk(start);
     for (const v of [...comp].sort(byOrder)) if (!seen.has(v)) seq.push(v);
-    units.push(seq);
+    units.push({ members: seq, gen: gen.get(id), order: Math.min(...seq.map(orderOf)), x: 0 });
   }
-  // famille parente : celle du premier parent connu (par ordre de création) d'un des membres
-  const parentUnit = new Map();
-  units.forEach((u, ui) => {
-    const ps = u.flatMap((m) => parents.get(m)).filter((p) => unitOf.get(p) !== ui).sort(byOrder);
-    if (ps.length) parentUnit.set(ui, unitOf.get(ps[0]));
-  });
-  // pas de boucle (quelqu'un qui serait son propre ancêtre) : on coupe le lien
-  for (const ui of [...parentUnit.keys()]) {
-    let cur = parentUnit.get(ui), guard = 0;
-    while (cur !== undefined && guard++ < units.length + 1) { if (cur === ui) { parentUnit.delete(ui); break; } cur = parentUnit.get(cur); }
-  }
-  const childUnits = new Map(units.map((_, i) => [i, []]));
-  for (const [c, p] of parentUnit) childUnits.get(p).push(c);
-  const unitOrder = (i) => Math.min(...units[i].map(orderOf));
-  for (const l of childUnits.values()) l.sort((a, b) => unitOrder(a) - unitOrder(b));
-  const gapIn = sp.gap * 0.7;
-  const uw = (i) => units[i].reduce((s, m) => s + size(m).w, 0) + gapIn * (units[i].length - 1);
-  const uh = (i) => Math.max(...units[i].map((m) => size(m).h));
-  const roots = units.map((_, i) => i).filter((i) => !parentUnit.has(i)).sort((a, b) => unitOrder(a) - unitOrder(b));
-  let x0 = 0;
-  for (const r of roots) {
-    const t = tidy(r, (i) => childUnits.get(i), uh, uw, sp, { levelGap: sp.level * 1.1 });
-    let bMin = Infinity;
-    for (const [i, p] of t.pos) bMin = Math.min(bMin, p.b - uw(i) / 2);
-    for (const [i, p] of t.pos) {
-      let x = x0 + (p.b - bMin) - uw(i) / 2;
-      const gen = t.depth.get(i);
-      for (const m of units[i]) {
-        const w = size(m).w;
-        A.pos.set(m, { x: x + w / 2, y: p.d });
-        A.ctx.set(m, { role: 'family', axis: 'TB', depth: gen, seq: 0, seqLen: items.length, branch: gen });
-        x += w + gapIn;
+  const gapIn = sp.gap * 0.7, gapOut = sp.gap * 1.3;
+  const widthOf = (u) => u.members.reduce((s, m) => s + size(m).w, 0) + gapIn * (u.members.length - 1);
+  // position de chaque membre par rapport au centre de sa famille
+  const offsets = (u) => {
+    const res = new Map();
+    let x = -widthOf(u) / 2;
+    for (const m of u.members) { res.set(m, x + size(m).w / 2); x += size(m).w + gapIn; }
+    return res;
+  };
+  const off = new Map();
+  const refreshOffsets = (u) => { for (const [m, o] of offsets(u)) off.set(m, o); };
+  units.forEach(refreshOffsets);
+  const xOf = (m) => units[unitOf.get(m)].x + off.get(m);
+  const maxGen = Math.max(0, ...units.map((u) => u.gen));
+  const rows = Array.from({ length: maxGen + 1 }, () => []);
+  for (const u of units) rows[u.gen].push(u);
+  for (const r of rows) r.sort((a, b) => a.order - b.order);
+
+  // une rangée : chaque famille veut être à `want`, on retire les chevauchements en bougeant le moins possible
+  // (familles qui se touchent regroupées en blocs, chaque bloc centré sur la moyenne de ses souhaits)
+  const settle = (row) => {
+    row.sort((a, b) => a.want - b.want || a.order - b.order);
+    const place = (blk) => {
+      let acc = 0, sum = 0;
+      for (const u of blk.units) { const w = widthOf(u); sum += u.want - (acc + w / 2); acc += w + gapOut; }
+      blk.w = acc - gapOut;
+      blk.left = sum / blk.units.length;
+    };
+    const blocks = [];
+    for (const u of row) {
+      let blk = { units: [u] };
+      place(blk);
+      while (blocks.length && blocks[blocks.length - 1].left + blocks[blocks.length - 1].w + gapOut > blk.left) {
+        blk = { units: [...blocks.pop().units, ...blk.units] };
+        place(blk);
+      }
+      blocks.push(blk);
+    }
+    for (const blk of blocks) {
+      let acc = blk.left;
+      for (const u of blk.units) { const w = widthOf(u); u.x = acc + w / 2; acc += w + gapOut; }
+    }
+  };
+  // départ : chaque rangée posée dans l'ordre
+  for (const row of rows) { let acc = 0; for (const u of row) { const w = widthOf(u); u.x = acc + w / 2; acc += w + gapOut; } }
+  const down = () => {
+    for (let g = 1; g <= maxGen; g++) {
+      for (const u of rows[g]) {
+        // dans le couple, celui dont les parents sont à gauche passe à gauche
+        const pm = (m) => { const ps = parents.get(m); return ps.length ? ps.reduce((s, p) => s + xOf(p), 0) / ps.length : null; };
+        if (u.members.length === 2) {
+          const [a, b] = u.members, xa = pm(a), xb = pm(b);
+          if (xa !== null && xb !== null && xa > xb) { u.members.reverse(); refreshOffsets(u); }
+        }
+        const wants = u.members.map((m) => (pm(m) === null ? null : pm(m) - off.get(m))).filter((w) => w !== null);
+        u.want = wants.length ? wants.reduce((s, w) => s + w, 0) / wants.length : u.x;
+      }
+      settle(rows[g]);
+    }
+  };
+  const up = () => {
+    for (let g = maxGen - 1; g >= 0; g--) {
+      for (const u of rows[g]) {
+        const ks = [...new Set(u.members.flatMap((m) => kids.get(m)))];
+        if (!ks.length) { u.want = u.x; continue; }
+        // le milieu des parents de ces enfants (dans cette famille) au-dessus du milieu des enfants
+        const ps = u.members.filter((m) => kids.get(m).length);
+        const pMid = ps.reduce((s, m) => s + off.get(m), 0) / ps.length;
+        u.want = ks.reduce((s, k) => s + xOf(k), 0) / ks.length - pMid;
+      }
+      settle(rows[g]);
+    }
+  };
+  for (let it = 0; it < 4; it++) { down(); up(); }
+  down();
+
+  // rangées en hauteur
+  const rowH = rows.map((r) => Math.max(0, ...r.flatMap((u) => u.members.map((m) => size(m).h))));
+  let y = 0;
+  const rowY = [];
+  rowH.forEach((h, g) => { rowY[g] = y + h / 2; y += h + sp.level * 1.1; });
+  let seq = 0;
+  for (let g = 0; g <= maxGen; g++) {
+    for (const u of [...rows[g]].sort((a, b) => a.x - b.x)) {
+      for (const m of u.members) {
+        A.pos.set(m, { x: xOf(m), y: rowY[g] });
+        A.ctx.set(m, { role: 'family', axis: 'TB', depth: g, seq: seq++, seqLen: ids.length, branch: g });
       }
     }
-    let bMax = -Infinity;
-    for (const [i, p] of t.pos) bMax = Math.max(bMax, p.b + uw(i) / 2);
-    x0 += bMax - bMin + sp.comp;
   }
-  let seq = 0;
-  for (const id of [...items].sort((a, b) => (A.pos.get(a).y - A.pos.get(b).y) || (A.pos.get(a).x - A.pos.get(b).x))) A.ctx.get(id).seq = seq++;
   for (const e of edges) {
     if (!e.direct) continue;
     A.hints.set(e.id, e.arrows === 'end' ? { kind: 'tree', axis: 'TB' } : { kind: 'straight' });
