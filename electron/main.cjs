@@ -6,10 +6,11 @@ const fs = require('node:fs');
 const TEST_DIR = process.env.SCHEMO_TEST_DIR || null; // tests automatiques : pas de boîtes de dialogue
 if (process.env.SCHEMO_USER_DATA) app.setPath('userData', process.env.SCHEMO_USER_DATA);
 app.setAppUserModelId('ca.leevsa.schemo'); // Windows : la fenêtre se range sous le raccourci épinglé (même valeur que appId)
-let win = null;
-let dirty = false;
-let forceClose = false;
-let pendingFile = null;
+// Plusieurs fenêtres, un seul processus : chaque fenêtre a son état (modifié ?, fichier ouvert, sauvegarde de secours).
+const wins = new Map(); // webContents.id → { win, dirty, forceClose, pendingFile, filePath, recoveryId }
+const stateOf = (e) => wins.get(e.sender.id) || {};
+const winOf = (e) => BrowserWindow.fromWebContents(e.sender);
+let autoChecked = false; // la recherche de mise à jour au démarrage : une seule fois, pas à chaque fenêtre
 
 function userFile(name) { return path.join(app.getPath('userData'), name); }
 
@@ -46,7 +47,26 @@ function addRecent(p) {
   if (process.platform === 'win32') app.addRecentDocument(p);
 }
 
-function createWindow() {
+// Sauvegardes de secours : un fichier par fenêtre dans userData/recuperation (recuperation.json : ancienne version).
+const RECOVERY_DIR = () => userFile('recuperation');
+const recoveryPath = (id) => (id === 'ancienne' ? userFile('recuperation.json') : path.join(RECOVERY_DIR(), id + '.json'));
+function leftoverRecoveries() {
+  const res = [];
+  if (fs.existsSync(userFile('recuperation.json'))) res.push('ancienne');
+  try { for (const f of fs.readdirSync(RECOVERY_DIR())) if (f.endsWith('.json')) res.push(f.slice(0, -5)); } catch { /* aucun */ }
+  return res;
+}
+const newRecoveryId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+// Le même fichier, sous Windows, peut s'écrire avec d'autres majuscules
+const samePath = (a, b) => !!a && !!b && (process.platform === 'win32' ? path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase() : path.resolve(a) === path.resolve(b));
+function windowWithFile(p, except) {
+  for (const st of wins.values()) if (st.win !== except && !st.win.isDestroyed() && samePath(st.filePath, p)) return st.win;
+  return null;
+}
+function show(w) { if (w.isMinimized()) w.restore(); w.show(); w.focus(); }
+
+function createWindow({ file = null, recoveryId = null } = {}) {
   const state = readJSON('window.json', { width: 1440, height: 900, maximized: false });
   // position mémorisée seulement si elle tombe sur un écran encore branché
   const onScreen = Number.isFinite(state.x) && Number.isFinite(state.y) && screen.getAllDisplays().some((d) => {
@@ -54,7 +74,13 @@ function createWindow() {
     return state.x + 100 < a.x + a.width && state.x + (state.width || 800) - 100 > a.x && state.y >= a.y - 10 && state.y + 40 < a.y + a.height;
   });
   if (!onScreen) { delete state.x; delete state.y; }
-  win = new BrowserWindow({
+  // une fenêtre de plus : décalée en cascade pour ne pas cacher exactement la précédente
+  const others = [...wins.values()].filter((st) => !st.win.isDestroyed());
+  if (others.length) {
+    const last = others[others.length - 1].win.getNormalBounds();
+    state.x = last.x + 32; state.y = last.y + 32; state.width = last.width; state.height = last.height; state.maximized = false;
+  }
+  const win = new BrowserWindow({
     width: state.width || 1440,
     height: state.height || 900,
     x: state.x, y: state.y,
@@ -72,6 +98,9 @@ function createWindow() {
       spellcheck: true,
     },
   });
+  const st = { win, dirty: false, forceClose: false, pendingFile: file, filePath: null, recoveryId: recoveryId || newRecoveryId() };
+  const id = win.webContents.id;
+  wins.set(id, st);
   if (state.maximized) win.maximize();
   win.loadFile(path.join(__dirname, '..', 'app', 'index.html'));
   win.once('ready-to-show', () => win.show());
@@ -93,36 +122,39 @@ function createWindow() {
     Menu.buildFromTemplate(items).popup({ window: win });
   });
   const saveState = () => {
-    if (!win || win.isDestroyed()) return;
+    if (win.isDestroyed()) return;
     const b = win.getNormalBounds();
     writeJSON('window.json', { ...b, maximized: win.isMaximized() });
   };
   win.on('close', (e) => {
     saveState();
-    if (dirty && !forceClose) {
+    if (st.dirty && !st.forceClose) {
       e.preventDefault();
       win.webContents.send('app:request-close');
     }
   });
-  win.on('closed', () => { win = null; });
+  win.on('closed', () => { wins.delete(id); });
+  return win;
 }
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
+  // Schémo relancé (raccourci, double-clic sur un fichier) : une nouvelle fenêtre, ou celle qui a déjà ce fichier
   app.on('second-instance', (e, argv) => {
     const f = fileFromArgv(argv);
-    if (win) {
-      if (win.isMinimized()) win.restore();
-      win.focus();
-      if (f) win.webContents.send('app:open-file', f);
-    }
+    const already = f && windowWithFile(f);
+    if (already) show(already);
+    else createWindow({ file: f });
   });
   app.whenReady().then(() => {
     Menu.setApplicationMenu(null);
-    pendingFile = fileFromArgv(process.argv);
-    createWindow();
+    const file = fileFromArgv(process.argv);
+    // après un plantage : une fenêtre par travail à récupérer, plus celle du fichier demandé
+    const left = leftoverRecoveries();
+    for (const r of left) createWindow({ recoveryId: r });
+    if (file || !left.length) createWindow({ file });
   });
   app.on('window-all-closed', () => app.quit());
 }
@@ -139,11 +171,14 @@ function rememberDir(key, p) {
   writeJSON('prefs.json', { ...readJSON('prefs.json', {}), [key]: path.dirname(p) });
 }
 
-ipcMain.handle('file:openDialog', async () => {
-  const r = await dialog.showOpenDialog(win, { title: tr('Ouvrir un diagramme'), defaultPath: lastDir('openDir'), filters: filters(), properties: ['openFile'] });
+// Ouvrir dans cette fenêtre ; un fichier déjà ouvert dans une autre fenêtre : on montre celle-là (already).
+ipcMain.handle('file:openDialog', async (e) => {
+  const r = await dialog.showOpenDialog(winOf(e), { title: tr('Ouvrir un diagramme'), defaultPath: lastDir('openDir'), filters: filters(), properties: ['openFile'] });
   if (r.canceled || !r.filePaths[0]) return null;
   const p = r.filePaths[0];
   rememberDir('openDir', p);
+  const other = windowWithFile(p, winOf(e));
+  if (other) { show(other); return { already: true }; }
   const content = fs.readFileSync(p, 'utf8');
   addRecent(p);
   return { path: p, name: path.basename(p), content };
@@ -187,7 +222,7 @@ ipcMain.handle('file:save', async (e, p, content) => {
 // current : fichier du diagramme ouvert ; « Enregistrer sous » part de son dossier, sinon du dernier dossier d'enregistrement.
 ipcMain.handle('file:saveAs', async (e, content, name, current) => {
   const dir = current && path.isAbsolute(current) && fs.existsSync(path.dirname(current)) ? path.dirname(current) : lastDir('saveDir');
-  const r = TEST_DIR ? { filePath: path.join(TEST_DIR, name || tr('Diagramme') + '.schemo') } : await dialog.showSaveDialog(win, { title: tr('Enregistrer le diagramme'), defaultPath: path.join(dir, name || tr('Diagramme') + '.schemo'), filters: filters() });
+  const r = TEST_DIR ? { filePath: path.join(TEST_DIR, name || tr('Diagramme') + '.schemo') } : await dialog.showSaveDialog(winOf(e), { title: tr('Enregistrer le diagramme'), defaultPath: path.join(dir, name || tr('Diagramme') + '.schemo'), filters: filters() });
   if (r.canceled || !r.filePath) return null;
   let p = r.filePath;
   if (!/\.schemo$/i.test(p)) p += '.schemo';
@@ -199,9 +234,9 @@ ipcMain.handle('file:saveAs', async (e, content, name, current) => {
 
 const EXPORT_FILTERS = { png: 'Image PNG', svg: 'Image SVG', pdf: 'Document PDF' };
 
-async function askExportPath(ext, name) {
+async function askExportPath(parent, ext, name) {
   if (TEST_DIR) return path.join(TEST_DIR, `${name}.${ext}`);
-  const r = await dialog.showSaveDialog(win, {
+  const r = await dialog.showSaveDialog(parent, {
     title: tr('Exporter'),
     defaultPath: path.join(lastDir('exportDir'), `${name}.${ext}`),
     filters: [{ name: tr(EXPORT_FILTERS[ext]), extensions: [ext] }],
@@ -214,7 +249,7 @@ async function askExportPath(ext, name) {
 }
 
 ipcMain.handle('export:file', async (e, { data, base64, ext, name }) => {
-  const p = await askExportPath(ext, name);
+  const p = await askExportPath(winOf(e), ext, name);
   if (!p) return null;
   writeSafely(p, base64 ? Buffer.from(data, 'base64') : data, base64 ? undefined : 'utf8');
   return p;
@@ -224,7 +259,7 @@ const PAGE_INCHES = { letter: [8.5, 11], legal: [8.5, 14], tabloid: [11, 17] };
 
 ipcMain.handle('export:pdf', async (e, { pages, pageSize, name, background }) => {
   const bg = /^#[0-9a-f]{6}$/i.test(background || '') ? background : '#ffffff'; // fond des marges (Lettre, Légal…)
-  const p = await askExportPath('pdf', name);
+  const p = await askExportPath(winOf(e), 'pdf', name);
   if (!p) return null;
   let pw, ph;
   const fit = !PAGE_INCHES[pageSize];
@@ -269,22 +304,41 @@ ipcMain.handle('export:pdf', async (e, { pages, pageSize, name, background }) =>
 });
 
 ipcMain.handle('recent:list', async () => readJSON('recents.json', []).filter((p) => fs.existsSync(p)));
-ipcMain.handle('recovery:save', async (e, content) => { try { fs.writeFileSync(userFile('recuperation.json'), content, 'utf8'); } catch { /* ignoré */ } });
-ipcMain.handle('recovery:load', async () => { try { return fs.readFileSync(userFile('recuperation.json'), 'utf8'); } catch { return null; } });
-ipcMain.handle('recovery:clear', async () => { fs.rmSync(userFile('recuperation.json'), { force: true }); });
+ipcMain.handle('recovery:save', async (e, content) => {
+  const st = stateOf(e);
+  if (!st.recoveryId) return;
+  // une ancienne sauvegarde reprise devient une sauvegarde de cette fenêtre
+  if (st.recoveryId === 'ancienne') { fs.rmSync(userFile('recuperation.json'), { force: true }); st.recoveryId = newRecoveryId(); }
+  try { fs.mkdirSync(RECOVERY_DIR(), { recursive: true }); fs.writeFileSync(recoveryPath(st.recoveryId), content, 'utf8'); } catch { /* ignoré */ }
+});
+ipcMain.handle('recovery:load', async (e) => { const st = stateOf(e); try { return st.recoveryId ? fs.readFileSync(recoveryPath(st.recoveryId), 'utf8') : null; } catch { return null; } });
+ipcMain.handle('recovery:clear', async (e) => { const st = stateOf(e); if (st.recoveryId) fs.rmSync(recoveryPath(st.recoveryId), { force: true }); });
 ipcMain.handle('prefs:get', async () => readJSON('prefs.json', {}));
 ipcMain.handle('prefs:set', async (e, p) => { writeJSON('prefs.json', { ...readJSON('prefs.json', {}), ...p }); });
 ipcMain.handle('clip:write', async (e, text) => { clipboard.writeText(String(text)); });
 ipcMain.handle('clip:read', async () => clipboard.readText());
-ipcMain.handle('app:startupFile', async () => { const f = pendingFile; pendingFile = null; return f; });
-ipcMain.on('app:dirty', (e, d) => { dirty = !!d; if (win) win.setDocumentEdited(!!d); });
-ipcMain.on('app:title', (e, t) => { if (win) win.setTitle(String(t)); });
-ipcMain.on('app:close-confirmed', () => { forceClose = true; if (win) win.close(); });
+ipcMain.handle('app:startupFile', async (e) => { const st = stateOf(e); const f = st.pendingFile || null; st.pendingFile = null; return f; });
+ipcMain.on('app:dirty', (e, d) => { const st = stateOf(e); st.dirty = !!d; if (st.win) st.win.setDocumentEdited(!!d); });
+ipcMain.on('app:title', (e, t) => { const w = winOf(e); if (w) w.setTitle(String(t)); });
+ipcMain.on('app:file', (e, p) => { stateOf(e).filePath = typeof p === 'string' && p ? p : null; });
+ipcMain.on('app:close-confirmed', (e) => { const st = stateOf(e); st.forceClose = true; if (st.win) st.win.close(); });
+// Fenêtres en plus : vide, ou un fichier choisi (celui-ci déjà ouvert ailleurs : on montre sa fenêtre)
+ipcMain.handle('window:new', async () => { createWindow(); });
+ipcMain.handle('window:focus-file', async (e, p) => { const other = windowWithFile(p, winOf(e)); if (other) show(other); return !!other; });
+ipcMain.handle('window:open-new', async (e) => {
+  const r = await dialog.showOpenDialog(winOf(e), { title: tr('Ouvrir un diagramme'), defaultPath: lastDir('openDir'), filters: filters(), properties: ['openFile'] });
+  if (r.canceled || !r.filePaths[0]) return;
+  const p = r.filePaths[0];
+  rememberDir('openDir', p);
+  const other = windowWithFile(p);
+  if (other) show(other); else createWindow({ file: p });
+});
 
 // ---------- mises à jour (depuis les Releases GitHub) ----------
 // Version installée seulement : le portable ne peut pas se remplacer lui-même. SCHEMO_UPDATE_TEST : tests, jamais d'installation.
 const canUpdate = (app.isPackaged && !process.env.PORTABLE_EXECUTABLE_FILE) || !!process.env.SCHEMO_UPDATE_TEST;
 let updater = null;
+let progressWin = null; // la fenêtre qui a demandé le téléchargement
 function getUpdater() {
   if (updater) return updater;
   ({ autoUpdater: updater } = require('electron-updater'));
@@ -292,20 +346,25 @@ function getUpdater() {
   updater.autoInstallOnAppQuit = app.isPackaged;
   updater.forceDevUpdateConfig = !app.isPackaged;
   updater.on('error', (err) => console.error(err)); // sans écouteur, l'erreur ferait planter l'application
-  updater.on('download-progress', (p) => { if (win) win.webContents.send('update:progress', Math.round(p.percent)); });
+  updater.on('download-progress', (p) => { if (progressWin && !progressWin.isDestroyed()) progressWin.webContents.send('update:progress', Math.round(p.percent)); });
   return updater;
 }
 
 ipcMain.handle('update:supported', async () => canUpdate);
 // Rend le numéro de la mise à jour disponible, ou null.
-ipcMain.handle('update:check', async () => {
+// auto : la recherche du démarrage, faite par la première fenêtre seulement
+ipcMain.handle('update:check', async (e, auto) => {
   if (!canUpdate) return null;
+  if (auto) { if (autoChecked) return null; autoChecked = true; }
   const r = await getUpdater().checkForUpdates();
   return r && r.isUpdateAvailable ? r.updateInfo.version.replace(/\.0$/, '') : null;
 });
-ipcMain.handle('update:download', async () => { await getUpdater().downloadUpdate(); });
-ipcMain.handle('update:install', async () => {
+ipcMain.handle('update:download', async (e) => { progressWin = winOf(e); await getUpdater().downloadUpdate(); });
+// Installer ferme toutes les fenêtres : si une autre a des changements non enregistrés, on la montre d'abord.
+ipcMain.handle('update:install', async (e) => {
+  const other = [...wins.values()].find((st) => st.dirty && st.win !== winOf(e) && !st.win.isDestroyed());
+  if (other) { show(other.win); return 'other-dirty'; }
   if (!app.isPackaged) return;
-  forceClose = true;
+  for (const st of wins.values()) st.forceClose = true;
   getUpdater().quitAndInstall(true, true); // sans écrans (même dossier, mêmes raccourcis), puis Schémo se rouvre
 });

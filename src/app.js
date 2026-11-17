@@ -234,7 +234,10 @@ class App {
     this.updateTitle();
   }
 
-  updateTitle() { io.setTitle(`${this.dirty ? '• ' : ''}${this.fileName} — Schémo`); }
+  updateTitle() {
+    io.setTitle(`${this.dirty ? '• ' : ''}${this.fileName} — Schémo`);
+    io.setFile(this.filePath || null);
+  }
 
   async autosave() {
     if (!this.dirty) return;
@@ -886,11 +889,12 @@ class App {
     if (!(await this.confirmDiscard())) return;
     let res;
     try { res = await io.openDialog(); } catch (err) { toast(tr('Ouverture impossible : ') + err.message, 'error'); return; }
-    if (!res) return;
+    if (!res || res.already) return; // déjà ouvert dans une autre fenêtre : elle est montrée
     this.loadContent(res.content, res.path, res.name);
   }
 
   async openPath(p) {
+    if (await io.focusFile(p)) return; // déjà ouvert dans une autre fenêtre
     if (!(await this.confirmDiscard())) return;
     try {
       const content = await io.readFile(p);
@@ -951,7 +955,7 @@ class App {
   async checkUpdate(manual = false) {
     if (!this.canUpdate || this.updating) return;
     let version;
-    try { version = await io.updateCheck(); } catch (err) {
+    try { version = await io.updateCheck(!manual); } catch (err) {
       console.error(err);
       if (manual) toast(tr('Impossible de vérifier les mises à jour. Es-tu connecté à Internet ?'), 'error');
       return;
@@ -982,7 +986,7 @@ class App {
     });
     if (now && await this.confirmDiscard()) {
       await io.recoveryClear();
-      await io.updateInstall();
+      if (await io.updateInstall() === 'other-dirty') toast(tr('Enregistre d’abord les changements de tes autres fenêtres.'), 'error');
     }
   }
 
@@ -1129,7 +1133,9 @@ class App {
     showMenu([
       { label: tr('Nouveau'), icon: 'newDoc', shortcut: 'Ctrl+N', action: () => this.newDoc() },
       { label: tr('Nouvelle fiche chronologique'), icon: 'timeline', action: () => this.addTab(tr('Chronologie'), 'timeline') },
+      isDesktop ? { label: tr('Nouvelle fenêtre'), shortcut: tr('Ctrl+Maj+N'), action: () => io.newWindow() } : null,
       { label: tr('Ouvrir…'), icon: 'open', shortcut: 'Ctrl+O', action: () => this.open() },
+      isDesktop ? { label: tr('Ouvrir dans une nouvelle fenêtre…'), action: () => io.openInNewWindow() } : null,
       { label: tr('Enregistrer'), icon: 'save', shortcut: 'Ctrl+S', action: () => this.save() },
       { label: tr('Enregistrer sous…'), shortcut: tr('Ctrl+Maj+S'), action: () => this.saveAs() },
       { sep: true },

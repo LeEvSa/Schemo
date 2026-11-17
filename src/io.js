@@ -31,6 +31,11 @@ export const io = {
     });
   },
   async readFile(path) { return api ? api.readFile(path) : null; },
+  // plusieurs fenêtres (application seulement)
+  setFile(path) { if (api) api.setFile(path || null); },
+  async newWindow() { if (api) return api.newWindow(); },
+  async focusFile(path) { return api && path ? api.focusFile(path) : false; },
+  async openInNewWindow() { if (api) return api.openInNewWindow(); },
   async save(path, content) {
     if (api) return api.save(path, content);
     download(path || 'diagramme.schemo', content, 'application/json');
@@ -79,7 +84,7 @@ export const io = {
     try { return await navigator.clipboard.readText(); } catch { return memClip; }
   },
   async updateSupported() { return api ? api.updateSupported() : false; },
-  async updateCheck() { return api ? api.updateCheck() : null; },
+  async updateCheck(auto) { return api ? api.updateCheck(auto) : null; },
   async updateDownload() { if (api) return api.updateDownload(); },
   async updateInstall() { if (api) return api.updateInstall(); },
   onUpdateProgress(cb) { if (api) api.onUpdateProgress(cb); },

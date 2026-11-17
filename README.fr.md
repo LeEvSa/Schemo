@@ -47,6 +47,7 @@ Pour une clé USB ou un PC où tu ne veux rien installer : `Schemo.exe`, la vers
 - **Panneau de droite** : forme des cases (rectangle arrondi, rectangle, pilule, ellipse, cercle, losange, hexagone, parallélogramme, et pour les histoires bouclier, étoile, nuage, couronne) et leur couleur, description (en Markdown), style des flèches (droite, courbe, angles, tirets, pointes, texte), thèmes de couleurs, espacement, sens de lecture.
 - **Export** (Ctrl+E) : PNG (fond blanc, transparent ou sombre, haute résolution), PDF (blanc ou sombre, page ajustée ou Lettre/Légal/Tabloïd, un ou tous les onglets), SVG (blanc, transparent ou sombre). Sur fond sombre, flèches, cadres et ligne du temps prennent les couleurs du mode sombre.
 - Raccourcis : Ctrl+Z/Y, Ctrl+C/X/V/D, Suppr, F2, Ctrl+A, Ctrl+F, Ctrl+S, Ctrl+O, Ctrl+N, Ctrl+0, F1 (aide).
+- Plusieurs fenêtres à la fois : relancer Schémo, Fichier → Nouvelle fenêtre (Ctrl+Maj+N), ou double-cliquer sur un fichier `.schemo`. Fichier → Ouvrir remplace le diagramme de la fenêtre ; Fichier → Ouvrir dans une nouvelle fenêtre… le garde. Un fichier déjà ouvert est montré dans sa fenêtre au lieu d'être ouvert deux fois.
 - Ouvrir, Enregistrer sous et Exporter retiennent chacun le dernier dossier utilisé. Enregistrer sous part du dossier du diagramme quand il a déjà un fichier.
 - Sauvegarde de secours automatique : si Schémo se ferme sans enregistrer, il propose de récupérer le travail au prochain lancement.
 

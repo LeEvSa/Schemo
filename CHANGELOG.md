@@ -3,6 +3,10 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.11 (2026-11-17)
+- **Several windows at once.** Relaunching Schémo, File → New window (Ctrl+Shift+N) or double-clicking a `.schemo` file opens a new window. File → Open in new window… keeps the current diagram where it is. A file already open in a window is never opened twice: Schémo shows that window instead.
+- Work saved for recovery is kept per window: after a crash, each unsaved diagram comes back in its own window.
+
 ## 3.10 (2026-11-17)
 - **New box shapes** for stories: shield, star, cloud and crown. Arrows attach to their real outline, and the text sits where it fits (under the crown's points, in the top of the shield).
 

@@ -2,6 +2,7 @@
 import { closeMenu, toast } from './dialogs.js';
 import { canLink, isInsideGroup } from '../model.js';
 import { tr } from '../i18n.js';
+import { io } from '../io.js';
 
 export class Interact {
   constructor(app) {
@@ -316,7 +317,7 @@ export class Interact {
       if (k === 'y' || (k === 'z' && e.shiftKey)) { stop(); app.redo(); return; }
       if (k === 's') { stop(); if (e.shiftKey) app.saveAs(); else app.save(); return; }
       if (k === 'o') { stop(); app.open(); return; }
-      if (k === 'n') { stop(); app.newDoc(); return; }
+      if (k === 'n') { stop(); if (e.shiftKey) io.newWindow(); else app.newDoc(); return; }
       if (k === 'e') { stop(); app.exportDialog(); return; }
       if (k === 'f') { stop(); const s = document.getElementById('search-input'); if (s) { s.focus(); s.select(); } return; }
       if (k === 'c') { stop(); app.copySelection(false); return; }

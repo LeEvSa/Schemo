@@ -91,7 +91,9 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   maison `ui/colorpicker.js` (2026-11-07, celui de Chromium ouvre toujours en RGB) : HEX par défaut, mode (`colorMode`) et
   couleurs récentes (`recentColors`) gardés dans `prefs.json`. `panel.pickColor` : tout le passage dans le sélecteur = une
   seule étape d'annulation ; Échap revient à la couleur de départ.
-- `electron/main.cjs` : un seul exemplaire (verrou), fichiers `.schemo` (JSON), PDF par `printToPDF` d'une fenêtre cachée,
-  sauvegarde de secours `recuperation.json` dans userData, préférences, fenêtre.
+- `electron/main.cjs` : un seul processus (verrou) mais plusieurs fenêtres (2026-11-17) : `wins` (webContents.id → état : `dirty`, `filePath`,
+  `recoveryId`…) ; relancer = nouvelle fenêtre, ou montre celle qui a déjà le fichier (`windowWithFile`). Fichiers `.schemo` (JSON), PDF par
+  `printToPDF` d'une fenêtre cachée, sauvegarde de secours par fenêtre `recuperation/<id>.json` dans userData (l'ancien `recuperation.json`
+  est repris), une fenêtre par sauvegarde restante au démarrage ; la recherche de mise à jour automatique ne se fait qu'une fois.
   Ouvrir / Enregistrer sous / Exporter retiennent chacun leur dossier (`openDir`, `saveDir`, `exportDir` de `prefs.json`, 2026-11-07) ;
   « Enregistrer sous » part du dossier du fichier ouvert s'il y en a un.
