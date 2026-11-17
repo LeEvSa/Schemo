@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.5 (2026-11-16)
+- **Family tree** shape: a line without arrowheads joins a couple, side by side; an arrow goes from a parent to their child, and children sit under the middle of the couple. One color per generation. The + adds a child, a parent or a partner.
+
 ## 3.4 (2026-11-16)
 - **Board** shape: one frame per act or chapter, as columns side by side, with scenes stacked inside. Drag a scene into another column to change its chapter.
 

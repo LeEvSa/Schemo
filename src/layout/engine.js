@@ -310,6 +310,8 @@ async function forcedArrange(C, shape, items, edges, size) {
     }
     case 'column': // une colonne du Tableau : les scènes empilées de haut en bas
       return [AR.rowArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, 'TB', 'column')];
+    case 'family':
+      return [AR.familyArrange(items, edges, size, C.sp, C.orderOf)];
     case 'list':
       return [AR.gridArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, dir)];
     case 'pyramid':

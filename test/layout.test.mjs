@@ -379,5 +379,30 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   check(L.nodes.get(loose.id).x > G[2].x + G[2].w, 'tableau : case hors colonne à droite');
 }
 
+// Arbre généalogique : couples côte à côte, enfants sous le milieu du couple, une génération par rangée
+{
+  const t = createTab('famille');
+  t.settings.shape = 'family';
+  const P = {};
+  for (const n of ['Grand-père', 'Grand-mère', 'Père', 'Tante', 'Mère', 'Élise', 'Tomas', 'Oncle']) P[n] = createNode(t, { title: n });
+  const couple = (a, b) => createEdge(t, P[a].id, P[b].id, { arrows: 'none' });
+  const child = (p, c) => createEdge(t, P[p].id, P[c].id);
+  couple('Grand-père', 'Grand-mère'); child('Grand-père', 'Père'); child('Grand-mère', 'Père'); child('Grand-père', 'Tante'); child('Grand-mère', 'Tante');
+  couple('Père', 'Mère'); child('Père', 'Élise'); child('Mère', 'Élise'); child('Père', 'Tomas'); child('Mère', 'Tomas');
+  couple('Tante', 'Oncle');
+  const L = await computeLayout(t, measure, {});
+  const n = (k) => L.nodes.get(P[k].id);
+  console.log(`• famille bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'famille : chevauchements');
+  check(Math.abs(n('Père').y - n('Mère').y) < 1 && Math.abs(n('Tante').y - n('Oncle').y) < 1, 'famille : couples sur la même rangée');
+  check(n('Père').y > n('Grand-père').y && n('Élise').y > n('Père').y, 'famille : générations de haut en bas');
+  const mid = (n('Père').x + n('Mère').x) / 2, kids = (n('Élise').x + n('Tomas').x) / 2;
+  check(Math.abs(mid - kids) < 2, `famille : enfants centrés sous le couple (${Math.round(mid)} / ${Math.round(kids)})`);
+  check(Math.abs(Math.abs(n('Père').x - n('Mère').x) - (n('Père').w + n('Mère').w) / 2) < 40, 'famille : couple côte à côte');
+  check(n('Élise').ctx.branch === 2 && n('Père').ctx.branch === 1 && n('Mère').ctx.branch === 1, 'famille : une couleur par génération');
+  const hint = [...L.edges.values()].find((e) => e.from === P['Père'].id && e.to === P['Élise'].id).hint;
+  check(hint && hint.kind === 'tree', 'famille : lien parent → enfant à angle droit');
+}
+
 console.log(failures ? `\n${failures} échec(s)` : '\nTous les tests passent.');
 process.exit(failures ? 1 : 0);

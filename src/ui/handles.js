@@ -13,6 +13,9 @@ export const HANDLE_LABELS = labels({
   'sibling-before': 'Ajouter une case à côté (même parent) — glisser pour relier',
   'seq-after': 'Ajouter un élément après — glisser pour relier',
   'seq-before': 'Ajouter un élément avant — glisser pour relier',
+  child: 'Ajouter un enfant (relié aux deux parents d’un couple) — glisser pour relier',
+  parent: 'Ajouter un parent — glisser pour relier',
+  partner: 'Ajouter un ou une partenaire (trait sans pointe) — glisser pour relier',
 });
 
 const dot = (a, b) => a.x * b.x + a.y * b.y;
@@ -59,6 +62,8 @@ export function handleActions(n, L, tab, scopeShape) {
       for (const s of Object.keys(SIDES)) if (s !== sOut && s !== back) res[s] = A('sibling-after');
       return res;
     }
+    case 'family':
+      return { bottom: A('child'), top: A('parent'), right: A('partner'), left: A('partner') };
     case 'radial':
     case 'network':
       return { top: A('branch'), right: A('branch'), bottom: A('branch'), left: A('branch') };
