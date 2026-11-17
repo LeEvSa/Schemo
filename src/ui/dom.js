@@ -65,6 +65,7 @@ const P = {
   arc: '<path d="M3 19c4-1 6-6 9-11 2-3 3-4 4-3 2 2 3 9 5 13"/><circle cx="3.5" cy="18.5" r="1.5"/><circle cx="15.5" cy="5" r="1.5"/><circle cx="20.5" cy="17.5" r="1.5"/>',
   board: '<rect x="2.5" y="3" width="5.5" height="18" rx="1" opacity=".45"/><rect x="9.25" y="3" width="5.5" height="18" rx="1" opacity=".45"/><rect x="16" y="3" width="5.5" height="18" rx="1" opacity=".45"/><path d="M4 6h2.5M4 9h2.5M10.75 6h2.5M17.5 6h2.5M17.5 9h2.5M17.5 12h2.5" stroke-width="2.2"/>',
   family: '<rect x="3" y="3" width="6" height="4.5" rx="1"/><rect x="15" y="3" width="6" height="4.5" rx="1"/><rect x="9" y="16.5" width="6" height="4.5" rx="1"/><path d="M9 5.25h6M12 5.25v11.25"/>',
+  target: '<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="1.8"/>',
   arrowDown: '<path d="M12 4v16M6 14l6 6 6-6"/>',
   arrowRight: '<path d="M4 12h16M14 6l6 6-6 6"/>',
   mixed: '<path d="M5 4v10h10"/><path d="m12 11 3 3-3 3"/><path d="m2 11 3 3 3-3"/>',

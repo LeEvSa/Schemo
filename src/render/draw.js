@@ -120,6 +120,10 @@ export function fillPaint(colors, defs) {
 // Ligne du temps à partir des positions courantes des cases : elle les suit pendant une animation ou un déplacement.
 // La position de la ligne est la médiane de ce que dit chaque case, pour qu'une case tirée à la souris ne l'emporte pas.
 export function timelineGeometry(tl, boxOf) {
+  if (tl.kind === 'rings') {
+    const c = boxOf(tl.center);
+    return c ? { kind: 'rings', cx: r2(c.x), cy: r2(c.y), radii: tl.radii.map(r2), loose: !!tl.loose } : null;
+  }
   if (tl.kind === 'arc') {
     const pts = tl.ids.map((id) => boxOf(id)).filter(Boolean).map((b) => ({ x: r2(b.x), y: r2(b.y) }));
     return pts.length > 1 ? { kind: 'arc', pts } : null;
@@ -158,6 +162,10 @@ export function timelineGeometry(tl, boxOf) {
 
 // colors : { line, text } ; dotOf(id) : couleur du point de chaque case.
 export function drawTimeline(parent, geo, colors, dotOf) {
+  if (geo.kind === 'rings') {
+    geo.radii.forEach((r, i) => el('circle', { cx: geo.cx, cy: geo.cy, r, fill: 'none', stroke: colors.line, 'stroke-width': 2, 'stroke-opacity': 0.28 - Math.min(0.12, i * 0.03), 'stroke-dasharray': geo.loose && i === geo.radii.length - 1 ? '6 6' : null }, parent));
+    return;
+  }
   if (geo.kind === 'arc') {
     // courbe lisse (Catmull-Rom) par le centre des scènes
     const p = geo.pts;

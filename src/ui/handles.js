@@ -66,6 +66,7 @@ export function handleActions(n, L, tab, scopeShape) {
       return { bottom: A('child'), top: A('parent'), right: A('partner'), left: A('partner') };
     case 'radial':
     case 'network':
+    case 'target':
       return { top: A('branch'), right: A('branch'), bottom: A('branch'), left: A('branch') };
     case 'single':
     case 'pinned':

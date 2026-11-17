@@ -404,5 +404,27 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   check(hint && hint.kind === 'tree', 'famille : lien parent → enfant à angle droit');
 }
 
+// Cible : centre = case sans flèche entrante, cercles par distance, case isolée sur le dernier cercle
+{
+  const t = createTab('cible');
+  t.settings.shape = 'target';
+  const P = {};
+  for (const n of ['Le royaume', 'La capitale', 'Les montagnes', 'La forêt', 'Le temple', 'Les mines', 'Le village', 'Terres lointaines']) P[n] = createNode(t, { title: n });
+  const ln = (a, b) => createEdge(t, P[a].id, P[b].id);
+  ln('Le royaume', 'La capitale'); ln('Le royaume', 'Les montagnes'); ln('Le royaume', 'La forêt');
+  ln('La capitale', 'Le temple'); ln('Les montagnes', 'Les mines'); ln('La forêt', 'Le village');
+  const L = await computeLayout(t, measure, {});
+  const c = L.nodes.get(P['Le royaume'].id);
+  const r = (k) => Math.hypot(L.nodes.get(P[k].id).x - c.x, L.nodes.get(P[k].id).y - c.y);
+  console.log(`• cible bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'cible : chevauchements');
+  check(Math.abs(r('La capitale') - r('La forêt')) < 1 && r('La capitale') > 0, 'cible : 1er cercle');
+  check(r('Le temple') > r('La capitale') + 10 && Math.abs(r('Le temple') - r('Le village')) < 1, 'cible : 2e cercle plus loin');
+  check(r('Terres lointaines') > r('Le temple') + 10, 'cible : case isolée sur le dernier cercle');
+  const tl = L.timelines.find((x) => x.kind === 'rings');
+  check(tl && tl.radii.length === 3 && tl.loose, 'cible : 3 cercles dessinés, le dernier « à part »');
+  check(L.bbox.w >= 2 * tl.radii[2] - 1, 'cible : les cercles comptent dans la taille du diagramme');
+}
+
 console.log(failures ? `\n${failures} échec(s)` : '\nTous les tests passent.');
 process.exit(failures ? 1 : 0);

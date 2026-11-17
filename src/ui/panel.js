@@ -15,7 +15,7 @@ export const SHAPE_LABELS = labels({
 export const LAYOUT_LABELS = labels({
   auto: 'Automatique', cycle: 'Cycle', hierarchy: 'Hiérarchie', process: 'Processus',
   list: 'Liste', pyramid: 'Pyramide', radial: 'Carte d’idées', timeline: 'Chronologie',
-  threads: 'Fils narratifs', network: 'Réseau', arc: 'Arc dramatique', board: 'Tableau', family: 'Arbre généalogique',
+  threads: 'Fils narratifs', network: 'Réseau', arc: 'Arc dramatique', board: 'Tableau', family: 'Arbre généalogique', target: 'Cible',
 });
 
 const LAYOUT_HELP = labels({
@@ -31,15 +31,16 @@ const LAYOUT_HELP = labels({
   arc: 'Les scènes suivent la tension de l’histoire : choisis un niveau de 1 à 5 par scène, ou laisse la courbe classique.',
   board: 'Un cadre par acte ou chapitre, en colonnes côte à côte ; les scènes s’empilent dedans. Glisse une scène dans une autre colonne pour la changer de chapitre.',
   family: 'Familles et lignées : un trait sans pointe relie un couple, une flèche va d’un parent à son enfant. Une couleur par génération.',
+  target: 'Le cœur au centre, puis des cercles de plus en plus loin : ce qui est relié au centre va sur le 1er cercle, ce qui est relié à ceux-là sur le 2e, etc.',
   threads: 'Un cadre par personnage ou intrigue : ses scènes vont de gauche à droite, alignées dans le temps avec celles des autres fils.',
 });
 
-const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', arc: 'arc', board: 'board', family: 'family', inherit: 'sparkle' };
+const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', arc: 'arc', board: 'board', family: 'family', target: 'target', inherit: 'sparkle' };
 
 const ROLE_WORDS = labels({
   cycle: 'dans un cycle (cercle)', ray: 'accrochée à un cycle', tree: 'dans une hiérarchie', chain: 'dans un processus',
   layered: 'dans un schéma à embranchements', single: 'seule (pas encore reliée)', pinned: 'épinglée à la main',
-  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', network: 'dans un réseau', arc: 'dans un arc dramatique', column: 'dans un tableau', family: 'dans un arbre généalogique', free: 'libre',
+  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', network: 'dans un réseau', arc: 'dans un arc dramatique', column: 'dans un tableau', family: 'dans un arbre généalogique', target: 'dans une cible', free: 'libre',
 });
 
 function shapeIcon(shape) {

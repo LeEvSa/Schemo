@@ -585,6 +585,60 @@ export function familyArrange(items, edges, size, sp, orderOf) {
   return A;
 }
 
+// ---------- Cible (cercles les uns dans les autres) ----------
+// Au centre : la plus ancienne case sans flèche entrante. Sur le 1er cercle, ce qui y est relié directement, sur le 2e
+// ce qui est relié à ceux-là, etc. (dans les deux sens). Ce qui n'est relié à rien va sur un dernier cercle, à part.
+export function targetArrange(items, pairs, edges, size, sp, orderOf) {
+  const A = emptyArrangement();
+  const ids = [...items].sort((a, b) => orderOf(a) - orderOf(b));
+  const nb = new Map(ids.map((id) => [id, []]));
+  const hasIn = new Set();
+  for (const { u, v } of pairs) {
+    if (!nb.has(u) || !nb.has(v)) continue;
+    nb.get(u).push(v); nb.get(v).push(u); hasIn.add(v);
+  }
+  for (const l of nb.values()) l.sort((a, b) => orderOf(a) - orderOf(b));
+  const linked = ids.filter((id) => nb.get(id).length);
+  const center = linked.find((id) => !hasIn.has(id)) || linked[0] || ids[0];
+  const depth = new Map([[center, 0]]);
+  const parent = new Map();
+  const queue = [center];
+  while (queue.length) {
+    const v = queue.shift();
+    for (const w of nb.get(v)) if (!depth.has(w)) { depth.set(w, depth.get(v) + 1); parent.set(w, v); queue.push(w); }
+  }
+  const maxLinked = Math.max(0, ...depth.values());
+  const loose = ids.some((id) => !depth.has(id));
+  for (const id of ids) if (!depth.has(id)) depth.set(id, maxLinked + 1);
+  const rings = [];
+  for (const id of ids) (rings[depth.get(id)] ||= []).push(id);
+  const diag = (id) => (size(id).w + size(id).h) / 2; // encombrement moyen d'une case, quel que soit l'angle
+  const R = [0];
+  const angle = new Map([[center, -Math.PI / 2]]);
+  for (let d = 1; d < rings.length; d++) {
+    const ring = rings[d] || [];
+    // dans l'ordre de leur case du cercle intérieur : moins de croisements
+    ring.sort((a, b) => {
+      const pa = parent.has(a) ? angle.get(parent.get(a)) : 9, pb = parent.has(b) ? angle.get(parent.get(b)) : 9;
+      return (pa - pb) || (orderOf(a) - orderOf(b));
+    });
+    const prevMax = Math.max(0, ...(rings[d - 1] || []).map(diag)), curMax = Math.max(0, ...ring.map(diag));
+    const around = ring.reduce((s, id) => s + Math.max(size(id).w, size(id).h) + sp.gap, 0);
+    R[d] = Math.max(R[d - 1] + prevMax / 2 + sp.level + curMax / 2, around / (2 * Math.PI), d === 1 ? curMax : 0);
+    ring.forEach((id, i) => angle.set(id, -Math.PI / 2 + (2 * Math.PI * i) / ring.length + (d % 2 ? 0 : Math.PI / Math.max(2, ring.length))));
+  }
+  let seq = 0;
+  for (let d = 0; d < rings.length; d++) for (const id of rings[d] || []) {
+    const a = angle.get(id);
+    A.pos.set(id, d === 0 ? { x: 0, y: 0 } : { x: R[d] * Math.cos(a), y: R[d] * Math.sin(a) });
+    A.ctx.set(id, { role: 'target', axis: 'TB', depth: d, seq: seq++, seqLen: ids.length, branch: d });
+  }
+  const Rmax = R[R.length - 1] || 0;
+  if (rings.length > 1) A.timeline = { kind: 'rings', center, loose, radii: R.slice(1), bb: { x: -Rmax, y: -Rmax, w: 2 * Rmax, h: 2 * Rmax } };
+  for (const e of edges) if (e.direct) A.hints.set(e.id, { kind: 'straight' });
+  return A;
+}
+
 // ---------- Réseau (personnages et relations) ----------
 // Disposition « en toile » : les cases reliées s'attirent, toutes se repoussent ; pas de haut ni de bas.
 // start(id) : position de départ connue (calcul précédent), pour que l'ajout d'une case ne bouscule pas tout.

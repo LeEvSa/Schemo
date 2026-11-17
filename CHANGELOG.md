@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.6 (2026-11-16)
+- **Target** shape: circles inside each other. The core sits in the center, what is linked to it on the 1st circle, what is linked to those on the 2nd, and so on; unlinked boxes go on a last, dashed circle.
+
 ## 3.5 (2026-11-16)
 - **Family tree** shape: a line without arrowheads joins a couple, side by side; an arrow goes from a parent to their child, and children sit under the middle of the couple. One color per generation. The + adds a child, a parent or a partner.
 

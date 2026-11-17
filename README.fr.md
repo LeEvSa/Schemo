@@ -41,7 +41,7 @@ Pour une clé USB ou un PC où tu ne veux rien installer : `Schemo.exe`, la vers
 | Maj + glisser le fond | Sélectionner plusieurs cases |
 | Clic droit | Menu de la case, de la flèche, du cadre ou du fond |
 
-- **Menu Forme** (barre du haut ou panneau) : Automatique, Cycle, Hiérarchie, Processus, Liste, Pyramide, Carte d'idées, Chronologie, Fils narratifs, Réseau, Arc dramatique, Tableau, Arbre généalogique — pour l'onglet entier ou un seul cadre.
+- **Menu Forme** (barre du haut ou panneau) : Automatique, Cycle, Hiérarchie, Processus, Liste, Pyramide, Carte d'idées, Chronologie, Fils narratifs, Réseau, Arc dramatique, Tableau, Arbre généalogique, Cible — pour l'onglet entier ou un seul cadre.
 - **Cadres** (Ctrl+G) : regroupent des cases, s'ajustent seuls, se replient (chevron) pour alléger les gros diagrammes.
 - **Onglets** en bas comme Excel ; un fichier `.schemo` contient tous les onglets.
 - **Panneau de droite** : forme et couleur des cases, description (en Markdown), style des flèches (droite, courbe, angles, tirets, pointes, texte), thèmes de couleurs, espacement, sens de lecture.
@@ -90,6 +90,7 @@ Des formes faites pour planifier des histoires (menu Forme, pour un onglet ou un
 - **Arc dramatique** : les scènes vont de gauche à droite sur une courbe qui suit la tension de l'histoire. Sélectionne une scène et choisis sa **Tension** (1 à 5) dans le panneau. Une scène laissée sur Auto se place entre ses voisines ; si aucune scène n'a encore de niveau, l'arc prend la forme classique (il monte jusqu'aux deux tiers, puis redescend).
 - **Tableau** : un cadre par acte ou chapitre, en colonnes côte à côte, comme des fiches sur un tableau de liège. Les scènes s'y empilent de haut en bas. Glisse une scène dans une autre colonne pour la changer de chapitre. Les cases hors colonne forment une colonne de plus, à droite.
 - **Arbre généalogique** : un trait **sans pointe** relie un couple, placé côte à côte ; une **flèche** va d'un parent à son enfant, et les enfants se placent sous le milieu du couple. Une couleur par génération. Autour d'une personne, le **+** du bas ajoute un enfant (relié aux deux membres du couple), celui du haut un parent, ceux des côtés un ou une partenaire. Pour faire d'une flèche un couple, mets-la « sans pointe » dans le panneau.
+- **Cible** : des cercles les uns dans les autres, pour situer un univers ou des personnages. La plus ancienne case sans flèche entrante est au centre ; ce qui y est relié va sur le 1er cercle, ce qui est relié à ceux-là sur le 2e, etc. Les cases reliées à rien vont sur un dernier cercle, en pointillé.
 
 ## Chronologie
 Fichier → **Nouvelle fiche chronologique**, ou la forme **Chronologie** du panneau de droite (pour un onglet ou un cadre).
