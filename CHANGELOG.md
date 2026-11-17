@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.9 (2026-11-17)
+- **Parallel timeline** shape: one frame per character, stacked as bands; scenes are placed by date on a time shared by all bands, with a ruler of dates on top and light lines across the bands. Even or to scale, following the Time line setting.
+
 ## 3.8 (2026-11-17)
 - **Family tree** placement fixed: each person now sits under their own parents, even when the two members of a couple come from different families, and two people with a child together are placed side by side even without a line between them.
 

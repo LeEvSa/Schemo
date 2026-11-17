@@ -298,6 +298,8 @@ export function gridArrange(order, edges, size, sp, axis) {
 // Verticale : une seule colonne, les dates à gauche de la ligne. La ligne suit les cases à l'affichage : voir timelineGeometry.
 // Unités de la ligne à l'échelle, en « jours » de dates.js (un an = 372, un mois = 31).
 export const TIME_UNITS = { hour: 1 / 24, day: 1, month: 31, year: 372, decade: 3720, century: 37200, millennium: 372000 };
+// unité choisie toute seule : la plus petite qui donne au plus 14 repères
+export const autoTimeUnit = (span) => ['hour', 'day', 'month', 'year', 'decade', 'century'].find((u) => span / TIME_UNITS[u] <= 14) || 'millennium';
 
 export function timelineArrange(order, edges, size, sp, axis, dateOf, measure, scale = null) {
   const A = emptyArrangement();
@@ -366,7 +368,7 @@ function scaledTimeline(A, order, edges, size, sp, axis, member, scale) {
   const k0 = Math.min(...ms.map((m) => m.k)), k1 = Math.max(...ms.map((m) => (Number.isFinite(m.end) ? Math.max(m.k, m.end) : m.k)));
   const span = Math.max(k1 - k0, 1 / 24);
   let unit = scale.unit && TIME_UNITS[scale.unit] ? scale.unit : null;
-  if (!unit) unit = ['hour', 'day', 'month', 'year', 'decade', 'century'].find((u) => span / TIME_UNITS[u] <= 14) || 'millennium';
+  if (!unit) unit = autoTimeUnit(span);
   const along = (id) => (axis === 'LR' ? size(id).w : size(id).h);
   const avg = order.reduce((s, id) => s + along(id), 0) / n;
   // Auto : une longueur qui tient à peu près comme l'espacement régulier ; une unité choisie : 110 px par unité

@@ -67,6 +67,8 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   Arbre généalogique (`family`) : `AR.familyArrange` ; flèche `arrows: 'end'` = parent → enfant, sinon couple. Couples (et co-parents d'un même
   enfant) = familles, une rangée par génération, ajustées en allers-retours haut/bas (chacun sous ses parents, parents au-dessus
   des enfants) sans chevauchement (blocs placés au plus près de leurs souhaits ; 2026-11-17) ; « + » : enfant (relié aux deux du couple), parent, partenaire.
+  Chronologie parallèle (`parallel`, 2026-11-17) : cadres = bandes `tlane` ; `engine.parallelArrange` place les scènes par date
+  (colonnes par date ou à l'échelle avec sous-rangées) ; règle dessinée par `L.timelines` `kind: 'ruler'`.
   Cible (`target`) : `AR.targetArrange`, cercles par distance (liens dans les deux sens) ; cercles dessinés par `L.timelines` (`kind: 'rings'`).
 - Flèches : chaque bout est une case ou un cadre (`model.canLink`, refusé entre un cadre et son contenu). Une flèche devenue interne
   (case glissée dans le cadre relié) n'est plus dessinée mais reste, et revient si la case ressort. `renderer.itemBox` = case ou cadre.

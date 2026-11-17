@@ -15,7 +15,7 @@ export const SHAPE_LABELS = labels({
 export const LAYOUT_LABELS = labels({
   auto: 'Automatique', cycle: 'Cycle', hierarchy: 'Hiérarchie', process: 'Processus',
   list: 'Liste', pyramid: 'Pyramide', radial: 'Carte d’idées', timeline: 'Chronologie',
-  threads: 'Fils narratifs', network: 'Réseau', arc: 'Arc dramatique', board: 'Tableau', family: 'Arbre généalogique', target: 'Cible',
+  threads: 'Fils narratifs', network: 'Réseau', arc: 'Arc dramatique', board: 'Tableau', family: 'Arbre généalogique', target: 'Cible', parallel: 'Chronologie parallèle',
 });
 
 const LAYOUT_HELP = labels({
@@ -32,15 +32,16 @@ const LAYOUT_HELP = labels({
   board: 'Un cadre par acte ou chapitre, en colonnes côte à côte ; les scènes s’empilent dedans. Glisse une scène dans une autre colonne pour la changer de chapitre.',
   family: 'Familles et lignées : un trait sans pointe relie un couple, une flèche va d’un parent à son enfant. Une couleur par génération.',
   target: 'Le cœur au centre, puis des cercles de plus en plus loin : ce qui est relié au centre va sur le 1er cercle, ce qui est relié à ceux-là sur le 2e, etc.',
+  parallel: 'Un cadre par personnage ; ses scènes se placent selon leur date, sur un temps commun à tous. Une règle en haut montre les dates.',
   threads: 'Un cadre par personnage ou intrigue : ses scènes vont de gauche à droite, alignées dans le temps avec celles des autres fils.',
 });
 
-const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', arc: 'arc', board: 'board', family: 'family', target: 'target', inherit: 'sparkle' };
+const ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', arc: 'arc', board: 'board', family: 'family', target: 'target', parallel: 'parallel', inherit: 'sparkle' };
 
 const ROLE_WORDS = labels({
   cycle: 'dans un cycle (cercle)', ray: 'accrochée à un cycle', tree: 'dans une hiérarchie', chain: 'dans un processus',
   layered: 'dans un schéma à embranchements', single: 'seule (pas encore reliée)', pinned: 'épinglée à la main',
-  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', network: 'dans un réseau', arc: 'dans un arc dramatique', column: 'dans un tableau', family: 'dans un arbre généalogique', target: 'dans une cible', free: 'libre',
+  list: 'dans une liste', pyramid: 'dans une pyramide', radial: 'dans une carte d’idées', timeline: 'dans une chronologie', lane: 'dans un fil narratif', network: 'dans un réseau', arc: 'dans un arc dramatique', column: 'dans un tableau', family: 'dans un arbre généalogique', target: 'dans une cible', tlane: 'dans une chronologie parallèle', free: 'libre',
 });
 
 function shapeIcon(shape) {
@@ -232,7 +233,7 @@ export class Panel {
     const anyPin = [...Object.values(t.nodes), ...Object.values(t.groups)].some((it) => it.pin);
     const forced = ['cycle', 'process', 'list', 'pyramid'].includes(s.shape);
     const painted = Object.values(t.nodes).filter((n) => n.color || n.textColor || n.borderColor).length;
-    const hasTimeline = s.shape === 'timeline' || Object.values(t.groups).some((g) => effectiveShape(t, g.id) === 'timeline');
+    const hasTimeline = ['timeline', 'parallel'].includes(s.shape) || Object.values(t.groups).some((g) => ['timeline', 'parallel'].includes(effectiveShape(t, g.id)));
     const scaled = s.timeScale === 'scale';
     return h('div', { class: 'p-inner' },
       h('div', { class: 'p-title' }, h('span', null, tr('Onglet')), h('span', { class: 'p-sub' }, t.name)),
@@ -308,7 +309,7 @@ export class Panel {
       return span.end === null ? tr('Date comprise.') : tr('Période comprise : une bande la montre sur la ligne.');
     };
     const dateNote = h('p', { class: 'muted small' }, dateText(one ? one.date : ''));
-    const dateInput = one && app.scopeShapeOf(one.id) === 'timeline' ? h('input', {
+    const dateInput = one && ['timeline', 'tlane', 'parallel'].includes(app.scopeShapeOf(one.id)) ? h('input', {
       type: 'text', class: 'inp', id: 'node-date', value: one.date, placeholder: tr('ex. 2026-03-15, mars 2026, de 2000 à 2010'),
       oninput: (e) => { dateNote.textContent = dateText(e.target.value); app.setNodeProps([one.id], { date: e.target.value }, 'pdate:' + one.id); },
       onblur: () => app.endCoalesce(),

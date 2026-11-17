@@ -6,7 +6,7 @@ import { uniquePairs, adjacency, weakComponents, scc, flowOrder, cycleOrder } fr
 import { fitUniform, collapsedSize, groupTitleWidth } from './sizing.js';
 import * as AR from './arrange.js';
 import { layeredArrange } from './layered.js';
-import { chronoOrder } from './dates.js';
+import { chronoOrder, parseSpan } from './dates.js';
 import { effectiveShape } from '../model.js';
 
 export const GP = 16; // marge intérieure d'un cadre
@@ -310,6 +310,10 @@ async function forcedArrange(C, shape, items, edges, size) {
     case 'arc': {
       const tensionOf = (id) => (C.nodes[id] && C.nodes[id].tension) || null;
       return [AR.arcArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, tensionOf)];
+    }
+    case 'tlane': { // une bande de la Chronologie parallèle : en file par date (la portée parente place ensuite)
+      const dateOf = (id) => (C.nodes[id] && C.nodes[id].date ? C.nodes[id].date.trim() : '');
+      return [AR.rowArrange(chronoOrder(flowOrder(items, pairs, C.orderOf), dateOf), edges, size, C.sp, 'LR', 'tlane')];
     }
     case 'column': // une colonne du Tableau : les scènes empilées de haut en bas
       return [AR.rowArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, 'TB', 'column')];
@@ -636,6 +640,119 @@ function boardArrange(C, scope, free, sizes, inner, sizeNodes) {
   return A;
 }
 
+// ---------- Chronologie parallèle ----------
+// Comme les Fils narratifs, mais les scènes se placent selon leur date, sur un temps commun à toutes les bandes :
+// « Régulier » = une colonne par date (dans l'ordre des dates), « À l'échelle » = position proportionnelle au temps,
+// avec des sous-rangées dans une bande quand deux scènes se toucheraient. Une règle en haut porte les repères.
+function parallelArrange(C, scope, free, sizes, inner, sizeNodes) {
+  const A = AR.emptyArrangement();
+  const isLane = (id) => C.groups[id] && !C.groups[id].collapsed && inner.has(id) && C.shapeOf(id) === 'tlane';
+  const lanes = free.filter(isLane);
+  const loose = free.filter((id) => !isLane(id));
+  sizeNodes(loose);
+  const dateOf = (id) => (C.nodes[id] && C.nodes[id].date ? C.nodes[id].date.trim() : '');
+  const rows = lanes.map((lid) => {
+    const R = inner.get(lid);
+    const items = (C.children.get(lid) || []).filter((id) => !C.pinOf(id) && boxIn(R, id));
+    return { lid, R, items: chronoOrder(items, dateOf), box: (id) => boxIn(R, id) };
+  });
+  rows.push({ lid: null, R: null, items: chronoOrder(loose, dateOf), box: (id) => sizes.get(id) });
+  // date de chaque scène ; sans date : juste après la précédente de sa bande
+  const key = new Map();
+  let firstK = null;
+  for (const r of rows) for (const id of r.items) { const s = parseSpan(dateOf(id)); if (s && firstK === null) firstK = s.start; }
+  for (const r of rows) {
+    let prev = null;
+    for (const id of r.items) {
+      const s = parseSpan(dateOf(id));
+      const k = s ? s.start : prev !== null ? prev + 1e-6 : (firstK ?? 0) - 1e-6;
+      key.set(id, k);
+      prev = k;
+    }
+  }
+  const scaled = C.settings.timeScale === 'scale' && firstK !== null;
+  const gap = C.sp.arrow * 0.7;
+  const all = rows.flatMap((r) => r.items);
+  const pos = new Map(); // centre en x de chaque scène
+  const sub = new Map(); // sous-rangée dans sa bande
+  let scale = null, columns = null;
+  if (scaled) {
+    const ks = all.map((id) => key.get(id));
+    const k0 = Math.min(...ks), span = Math.max(Math.max(...ks) - k0, 1 / 24);
+    const unit = C.settings.timeUnit && C.settings.timeUnit !== 'auto' ? C.settings.timeUnit : AR.autoTimeUnit(span);
+    const avg = all.reduce((s, id) => s + rows.find((r) => r.items.includes(id)).box(id).w, 0) / Math.max(1, all.length);
+    let ppk = C.settings.timeUnit && C.settings.timeUnit !== 'auto' ? 110 / AR.TIME_UNITS[unit] : Math.min(6000, Math.max(500, all.length * (avg + gap) * 0.6)) / span;
+    ppk = Math.min(ppk, 40000 / span);
+    const half = Math.max(...all.map((id) => rows.find((r) => r.items.includes(id)).box(id).w)) / 2;
+    for (const id of all) pos.set(id, half + (key.get(id) - k0) * ppk);
+    for (const r of rows) {
+      const used = [];
+      for (const id of r.items) {
+        const w = r.box(id).w, a0 = pos.get(id) - w / 2 - gap / 2, a1 = pos.get(id) + w / 2 + gap / 2;
+        let s = 0;
+        while ((used[s] || []).some(([p, q]) => a1 > p && a0 < q)) s++;
+        (used[s] ||= []).push([a0, a1]);
+        sub.set(id, s);
+      }
+    }
+    const ref = all.find((id) => parseSpan(dateOf(id))) || all[0];
+    scale = { ppk, unit, ref, k: key.get(ref) };
+  } else {
+    // une colonne par date différente ; deux scènes d'une même bande ne partagent jamais une colonne
+    const ks = [...new Set(all.map((id) => key.get(id)))].sort((a, b) => a - b);
+    const col = new Map(all.map((id) => [id, ks.indexOf(key.get(id))]));
+    for (const r of rows) for (let i = 1; i < r.items.length; i++) col.set(r.items[i], Math.max(col.get(r.items[i]), col.get(r.items[i - 1]) + 1));
+    const ncol = Math.max(-1, ...col.values()) + 1;
+    const colW = new Array(ncol).fill(0);
+    for (const r of rows) for (const id of r.items) colW[col.get(id)] = Math.max(colW[col.get(id)], r.box(id).w);
+    const colX = [];
+    let acc = 0;
+    for (let c = 0; c < ncol; c++) { colX[c] = acc + colW[c] / 2; acc += colW[c] + (colW[c] ? gap : 0); }
+    for (const id of all) { pos.set(id, colX[col.get(id)]); sub.set(id, 0); }
+    // repères : la date écrite de la première scène de chaque colonne
+    columns = [];
+    for (let c = 0; c < ncol; c++) {
+      const id = all.find((x) => col.get(x) === c && dateOf(x));
+      if (id && !columns.some((m) => m.label === dateOf(id))) columns.push({ id, label: dateOf(id) });
+    }
+  }
+  const totalW = Math.max(0, ...all.map((id) => pos.get(id) + rows.find((r) => r.items.includes(id)).box(id).w / 2));
+  let W = Math.max(totalW + 2 * GP, 150);
+  for (const r of rows) if (r.lid) W = Math.max(W, groupTitleWidth(C.groups[r.lid], C.measure));
+  const ruler = 46;
+  let y = ruler;
+  const laneGap = C.sp.gap * 0.5;
+  rows.forEach((r, ri) => {
+    if (!r.lid && !r.items.length) return;
+    const hMax = Math.max(0, ...r.items.map((id) => r.box(id).h));
+    const nsub = Math.max(0, ...r.items.map((id) => sub.get(id))) + 1;
+    const ys = (s) => s * (hMax + gap * 0.5) + hMax / 2;
+    const innerH = r.items.length ? nsub * hMax + (nsub - 1) * gap * 0.5 : 0;
+    const ctx = (id) => ({ role: 'tlane', axis: 'LR', depth: 0, seq: all.indexOf(id), seqLen: all.length, branch: ri });
+    if (r.lid) {
+      for (const id of r.items) {
+        const b = r.box(id);
+        moveSubtree(C, r.R, id, pos.get(id) - b.x, ys(sub.get(id)) - b.y);
+        if (C.nodes[id]) r.R.ctx.set(id, ctx(id));
+      }
+      r.R.w = W - 2 * GP;
+      r.R.h = innerH;
+      const h = Math.max(innerH + GT + GP, 84);
+      sizes.set(r.lid, { w: W, h });
+      A.pos.set(r.lid, { x: W / 2, y: y + h / 2 });
+      y += h + laneGap;
+    } else {
+      y += laneGap;
+      for (const id of r.items) { A.pos.set(id, { x: GP + pos.get(id), y: y + ys(sub.get(id)) }); A.ctx.set(id, ctx(id)); }
+      y += innerH;
+    }
+  });
+  // la règle du temps : au-dessus des bandes, avec de fines lignes qui les traversent (draw.timelineGeometry)
+  if (all.length) A.timeline = { kind: 'ruler', lanes: [...lanes], scale, columns, bb: { x: 0, y: 0, w: W, h: ruler } };
+  for (const e of C.scopeEdges.get(scope) || []) A.hints.set(e.id, { kind: 'curve' });
+  return A;
+}
+
 async function layoutScope(C, scope) {
   const items = C.children.get(scope) || [];
   const sizes = new Map();
@@ -673,6 +790,8 @@ async function layoutScope(C, scope) {
       const cs = new Set(comp);
       parts.push(await autoArrange(C, comp, freeEdges.filter((e) => cs.has(e.u) && cs.has(e.v)), size));
     }
+  } else if (shape === 'parallel') {
+    parts.push(parallelArrange(C, scope, free, sizes, inner, sizeNodes));
   } else if (shape === 'board') {
     parts.push(boardArrange(C, scope, free, sizes, inner, sizeNodes));
   } else if (shape === 'threads') {

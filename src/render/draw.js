@@ -120,6 +120,21 @@ export function fillPaint(colors, defs) {
 // Ligne du temps à partir des positions courantes des cases : elle les suit pendant une animation ou un déplacement.
 // La position de la ligne est la médiane de ce que dit chaque case, pour qu'une case tirée à la souris ne l'emporte pas.
 export function timelineGeometry(tl, boxOf) {
+  if (tl.kind === 'ruler') {
+    // règle de la Chronologie parallèle : au-dessus des bandes, sur toute leur largeur
+    const boxes = tl.lanes.map((id) => boxOf(id)).filter(Boolean);
+    if (!boxes.length) return null;
+    const left = r2(Math.min(...boxes.map((b) => b.x - b.w / 2))), right = r2(Math.max(...boxes.map((b) => b.x + b.w / 2)));
+    const top = Math.min(...boxes.map((b) => b.y - b.h / 2)), bottom = r2(Math.max(...boxes.map((b) => b.y + b.h / 2)));
+    const at = r2(top - 14);
+    let marks = [];
+    if (tl.columns) marks = tl.columns.map((c) => { const b = boxOf(c.id); return b && { p: r2(b.x), label: c.label }; }).filter(Boolean);
+    else if (tl.scale) {
+      const b = boxOf(tl.scale.ref);
+      if (b) marks = graduations({ scale: tl.scale }, [{ m: { k: tl.scale.k } }], [b.x], left, right);
+    }
+    return { kind: 'ruler', at, left, right, bottom, marks };
+  }
   if (tl.kind === 'rings') {
     const c = boxOf(tl.center);
     return c ? { kind: 'rings', cx: r2(c.x), cy: r2(c.y), radii: tl.radii.map(r2), loose: !!tl.loose } : null;
@@ -214,6 +229,16 @@ function graduations(tl, marks, along, start, end) {
 
 // colors : { line, text } ; dotOf(id) : couleur du point de chaque case.
 export function drawTimeline(parent, geo, colors, dotOf) {
+  if (geo.kind === 'ruler') {
+    el('line', { x1: geo.left, y1: geo.at, x2: geo.right, y2: geo.at, stroke: colors.line, 'stroke-width': 2, 'stroke-linecap': 'round' }, parent);
+    for (const m of geo.marks) {
+      el('line', { x1: m.p, y1: geo.at, x2: m.p, y2: geo.bottom, stroke: colors.line, 'stroke-width': 1.2, 'stroke-opacity': 0.25, 'stroke-dasharray': '4 5' }, parent);
+      el('line', { x1: m.p, y1: geo.at - 5, x2: m.p, y2: geo.at + 5, stroke: colors.line, 'stroke-width': 2 }, parent);
+      const lab = el('text', { x: m.p, y: geo.at - 10, 'text-anchor': 'middle', 'font-size': 12, 'font-weight': 650, fill: colors.text }, parent);
+      lab.textContent = m.label;
+    }
+    return;
+  }
   if (geo.kind === 'rings') {
     geo.radii.forEach((r, i) => el('circle', { cx: geo.cx, cy: geo.cy, r, fill: 'none', stroke: colors.line, 'stroke-width': 2, 'stroke-opacity': 0.28 - Math.min(0.12, i * 0.03), 'stroke-dasharray': geo.loose && i === geo.radii.length - 1 ? '6 6' : null }, parent));
     return;

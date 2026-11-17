@@ -426,6 +426,36 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   check(Math.abs(mid('4', '5') - mid('2', 'X')) < 2, 'famille 2 : enfants sous le couple');
 }
 
+// Chronologie parallèle : bandes = cadres, scènes placées par date sur un temps commun, règle au-dessus
+{
+  const t = createTab('parallèle');
+  t.settings.shape = 'parallel';
+  const alice = createGroup(t, { title: 'Alice' }), bob = createGroup(t, { title: 'Bob' });
+  const S = (title, date, g) => createNode(t, { title, date, group: g.id });
+  const a1 = S('Naissance', '2000', alice), a2 = S('Départ', '2005', alice), a3 = S('Retour', '2010', alice), a4 = S('Sans date', '', alice);
+  const b2 = S('Rencontre', '2020', bob), b1 = S('Arrivée', '2005', bob), b3 = S('Même année', '2005', bob);
+  let L = await computeLayout(t, measure, {});
+  const x = (n) => L.nodes.get(n.id).x, y = (n) => L.nodes.get(n.id).y;
+  console.log(`• chronologie parallèle bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'parallèle : chevauchements');
+  check(Math.abs(x(a2) - x(b1)) < 1, 'parallèle (régulier) : 2005 aligné dans les deux bandes');
+  check(x(a1) < x(a2) && x(a2) < x(a3) && x(a3) < x(a4), 'parallèle : Alice par date, la scène sans date après la précédente');
+  check(x(b2) > x(a3) && x(b3) > x(b1), 'parallèle : 2020 après 2010 ; deux scènes de 2005 d’une bande côte à côte');
+  const ga = L.groups.get(alice.id), gb = L.groups.get(bob.id);
+  check(Math.abs(ga.w - gb.w) < 1 && gb.y > ga.y, 'parallèle : bandes alignées, empilées');
+  const box = (id) => { const n = L.nodes.get(id) || L.groups.get(id); return n && (L.nodes.get(id) ? { x: n.x, y: n.y, w: n.w, h: n.h } : { x: n.x + n.w / 2, y: n.y + n.h / 2, w: n.w, h: n.h }); };
+  let geo = timelineGeometry(L.timelines.find((tl) => tl.kind === 'ruler'), box);
+  check(geo && geo.at < ga.y && geo.marks.map((m) => m.label).join(' ') === '2000 2005 2010 2020', 'parallèle : règle au-dessus avec les dates (' + (geo && geo.marks.map((m) => m.label).join(' ')) + ')');
+  t.settings.timeScale = 'scale';
+  L = await computeLayout(t, measure, {});
+  check(overlaps(L).length === 0, 'parallèle (échelle) : chevauchements');
+  const r = (x(b2) - x(a1)) / (x(a3) - x(a1));
+  check(Math.abs(r - 2) < 0.05, 'parallèle (échelle) : 2000→2020 = 2 × 2000→2010, trouvé ' + r.toFixed(2));
+  check(Math.abs(x(a2) - x(b1)) < 1 && Math.abs(x(b1) - x(b3)) < 1 && Math.abs(y(b1) - y(b3)) > 1, 'parallèle (échelle) : même année = même x, l’une sous l’autre');
+  geo = timelineGeometry(L.timelines.find((tl) => tl.kind === 'ruler'), box);
+  check(geo.marks.some((m) => m.label === '2010'), 'parallèle (échelle) : repères (' + geo.marks.map((m) => m.label).join(' ') + ')');
+}
+
 // Cible : centre = case sans flèche entrante, cercles par distance, case isolée sur le dernier cercle
 {
   const t = createTab('cible');

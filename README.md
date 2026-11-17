@@ -39,7 +39,7 @@ For a USB key or a PC where you don't want to install anything: `Schemo.exe`, th
 | Shift + drag the background | Select several boxes |
 | Right-click | Menu for the box, arrow, frame or background |
 
-- **Shape menu** (top bar or panel): Automatic, Cycle, Hierarchy, Process, List, Pyramid, Mind map, Timeline, Story threads, Network, Story arc, Board, Family tree, Target, for the whole tab or a single frame.
+- **Shape menu** (top bar or panel): Automatic, Cycle, Hierarchy, Process, List, Pyramid, Mind map, Timeline, Story threads, Network, Story arc, Board, Family tree, Target, Parallel timeline, for the whole tab or a single frame.
 - **Frames** (Ctrl+G): group boxes, resize themselves, and collapse (chevron) to lighten large diagrams.
 - **Tabs** at the bottom, like Excel; one `.schemo` file holds all the tabs.
 - **Right panel**: box shape and color, description (in Markdown), arrow style (straight, curved, right angles, dashes, heads, text), color themes, spacing, reading direction.
@@ -78,6 +78,7 @@ Shapes made for planning stories (in the Shape menu, for a tab or a frame):
 - **Board**: one frame per act or chapter, as columns side by side, like index cards on a corkboard. Scenes stack inside, top to bottom. Drag a scene into another column to move it to that chapter. Boxes outside any column form an extra column on the right.
 - **Family tree**: a line **without arrowheads** joins a couple, who sit side by side; an **arrow** goes from a parent to their child, and children sit under the middle of the couple. Two people with a child together are placed as a couple even without a line between them, and each person sits under their own parents, even when both partners come from different families. One color per generation. Around a person, the **+** below adds a child (linked to both members of the couple), above a parent, and on the sides a partner. To turn an arrow into a couple, set it to "no arrowhead" in the panel.
 - **Target**: circles inside each other, to place a world or a cast. The oldest box with no incoming arrow sits in the center; what is linked to it goes on the 1st circle, what is linked to those on the 2nd, and so on. Boxes linked to nothing go on a last, dashed circle.
+- **Parallel timeline**: one frame per character, stacked as bands like Story threads, but each scene is placed by its **Date**, on a time shared by all bands. A ruler at the top shows the dates, with light lines across the bands to read who does what at the same time. It follows the tab's **Time line** setting: Even (one column per date) or To scale (real gaps; scenes too close together stack inside their band).
 
 ## Timeline
 
