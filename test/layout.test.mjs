@@ -360,5 +360,24 @@ for (const shape of ['cycle', 'hierarchy', 'process', 'list', 'pyramid', 'radial
   check(Math.abs(y(6) - y(5)) < 0.01, 'arc : après la dernière scène réglée, même niveau');
 }
 
+// Tableau : un cadre = une colonne, côte à côte, même taille ; scènes empilées
+{
+  const t = createTab('tableau');
+  t.settings.shape = 'board';
+  const acts = ['Acte 1', 'Acte 2', 'Acte 3'].map((title) => createGroup(t, { title }));
+  const sc = [[3, acts[0]], [1, acts[1]], [4, acts[2]]].map(([k, g]) => Array.from({ length: k }, (_, i) => createNode(t, { title: `${g.title} — scène ${i + 1}`, group: g.id })));
+  const loose = createNode(t, { title: 'À placer' });
+  const L = await computeLayout(t, measure, {});
+  console.log(`• tableau bbox ${Math.round(L.bbox.w)}×${Math.round(L.bbox.h)}`);
+  check(overlaps(L).length === 0, 'tableau : chevauchements');
+  const G = acts.map((g) => L.groups.get(g.id));
+  check(G[0].x < G[1].x && G[1].x < G[2].x, 'tableau : colonnes de gauche à droite');
+  check(G.every((g) => Math.abs(g.w - G[0].w) < 1 && Math.abs(g.h - G[0].h) < 1 && Math.abs(g.y - G[0].y) < 1), 'tableau : colonnes de même taille, alignées');
+  const ys = sc[2].map((n) => L.nodes.get(n.id).y);
+  check(ys.every((y, i) => i === 0 || y > ys[i - 1]), 'tableau : scènes empilées de haut en bas');
+  check(sc[0].every((n) => L.nodes.get(n.id).ctx.branch === 0) && L.nodes.get(sc[1][0].id).ctx.branch === 1, 'tableau : une couleur par colonne');
+  check(L.nodes.get(loose.id).x > G[2].x + G[2].w, 'tableau : case hors colonne à droite');
+}
+
 console.log(failures ? `\n${failures} échec(s)` : '\nTous les tests passent.');
 process.exit(failures ? 1 : 0);

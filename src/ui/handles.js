@@ -34,6 +34,7 @@ export function handleActions(n, L, tab, scopeShape) {
   if (scopeShape === 'timeline') return n.ctx && n.ctx.axis === 'TB' ? { bottom: A('seq-after'), top: A('seq-before') } : { right: A('seq-after'), left: A('seq-before') };
   // Fils narratifs : une scène avant ou après, sans flèche (l'ordre suffit ; on relie à la main entre les fils)
   if (scopeShape === 'lane' || scopeShape === 'threads' || scopeShape === 'arc') return { right: A('seq-after'), left: A('seq-before') };
+  if (scopeShape === 'column' || scopeShape === 'board') return { bottom: A('seq-after'), top: A('seq-before') };
   if (scopeShape === 'pyramid') return { bottom: A('seq-after'), top: A('seq-before') };
   if (scopeShape === 'list') return { right: A('seq-after'), bottom: A('seq-after'), left: A('seq-before'), top: A('seq-before') };
   const ctx = n.ctx || {};

@@ -3,6 +3,9 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 3.4 (2026-11-16)
+- **Board** shape: one frame per act or chapter, as columns side by side, with scenes stacked inside. Drag a scene into another column to change its chapter.
+
 ## 3.3 (2026-11-16)
 - **Story arc** shape: scenes follow a curve that shows the tension of the story. Each scene has a Tension level (1 to 5) in the panel; a scene left on Auto sits between its neighbors, and with no level at all the arc takes the classic shape.
 

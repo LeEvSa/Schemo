@@ -308,6 +308,8 @@ async function forcedArrange(C, shape, items, edges, size) {
       const tensionOf = (id) => (C.nodes[id] && C.nodes[id].tension) || null;
       return [AR.arcArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, tensionOf)];
     }
+    case 'column': // une colonne du Tableau : les scènes empilées de haut en bas
+      return [AR.rowArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, 'TB', 'column')];
     case 'list':
       return [AR.gridArrange(flowOrder(items, pairs, C.orderOf), edges, size, C.sp, dir)];
     case 'pyramid':
@@ -594,6 +596,39 @@ function threadsArrange(C, scope, free, sizes, inner, sizeNodes) {
   return A;
 }
 
+// ---------- Tableau par chapitres ----------
+// Chaque cadre est une colonne (un acte, un chapitre), côte à côte, toutes de même taille ; les scènes s'empilent
+// dedans. Ce qui n'est dans aucune colonne fait une colonne de plus, sans cadre, à droite.
+function boardArrange(C, scope, free, sizes, inner, sizeNodes) {
+  const A = AR.emptyArrangement();
+  const isCol = (id) => C.groups[id] && !C.groups[id].collapsed && inner.has(id) && C.shapeOf(id) === 'column';
+  const cols = free.filter(isCol);
+  const loose = free.filter((id) => !isCol(id));
+  sizeNodes(loose);
+  let W = 150, H = 84;
+  for (const c of cols) { W = Math.max(W, sizes.get(c).w); H = Math.max(H, sizes.get(c).h); }
+  const gap = C.sp.gap * 0.6;
+  let x = 0;
+  cols.forEach((c, ci) => {
+    sizes.set(c, { w: W, h: H });
+    A.pos.set(c, { x: x + W / 2, y: H / 2 });
+    x += W + gap;
+    // une couleur par colonne
+    const R = inner.get(c);
+    for (const id of C.children.get(c) || []) if (C.nodes[id] && R.ctx.get(id)) R.ctx.set(id, { ...R.ctx.get(id), branch: ci });
+  });
+  const lw = Math.max(0, ...loose.map((id) => sizes.get(id).w));
+  let y = cols.length ? GT : 0;
+  loose.forEach((id, i) => {
+    const s = sizes.get(id);
+    A.pos.set(id, { x: x + lw / 2, y: y + s.h / 2 });
+    A.ctx.set(id, { role: 'column', axis: 'TB', depth: 0, seq: i, seqLen: loose.length, branch: cols.length });
+    y += s.h + gap * 0.8;
+  });
+  for (const e of C.scopeEdges.get(scope) || []) A.hints.set(e.id, { kind: 'curve' });
+  return A;
+}
+
 async function layoutScope(C, scope) {
   const items = C.children.get(scope) || [];
   const sizes = new Map();
@@ -631,6 +666,8 @@ async function layoutScope(C, scope) {
       const cs = new Set(comp);
       parts.push(await autoArrange(C, comp, freeEdges.filter((e) => cs.has(e.u) && cs.has(e.v)), size));
     }
+  } else if (shape === 'board') {
+    parts.push(boardArrange(C, scope, free, sizes, inner, sizeNodes));
   } else if (shape === 'threads') {
     parts.push(threadsArrange(C, scope, free, sizes, inner, sizeNodes));
   } else {
