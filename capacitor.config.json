@@ -1,0 +1,8 @@
+{
+  "appId": "ca.leevsa.schemo",
+  "appName": "Schémo",
+  "webDir": "app",
+  "android": {
+    "backgroundColor": "#f5f6f8"
+  }
+}

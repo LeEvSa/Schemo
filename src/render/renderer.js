@@ -458,8 +458,9 @@ export class Renderer {
       const b = this.itemBox(hid);
       const actions = b && this.host.handleActions ? this.host.handleActions(hid) : null;
       if (b && actions) {
-        const off = 17 / Math.max(0.6, Math.min(1.4, z)) + 0;
-        const r = 9.5 / Math.max(0.55, Math.min(1.4, z));
+        const T = this.touch ? 1.5 : 1; // au doigt : des + plus gros et plus loin de la case
+        const off = 17 * T / Math.max(0.6, Math.min(1.4, z));
+        const r = 9.5 * T / Math.max(0.55, Math.min(1.4, z));
         for (const side of ['top', 'right', 'bottom', 'left']) {
           const act = actions[side];
           if (!act) continue;
@@ -467,10 +468,10 @@ export class Renderer {
           const p = boundary(b.shape, b.w, b.h, b.trap, d[0], d[1]);
           const cx = b.x + p.x + d[0] * off, cy = b.y + p.y + d[1] * off;
           const g = el('g', { class: 'handle', 'data-handle': side, 'data-node': hid, transform: `translate(${cx} ${cy})` }, ov);
-          el('circle', { r: r + 6, class: 'handle-hit' }, g);
+          el('circle', { r: r + 6 * T, class: 'handle-hit' }, g);
           el('circle', { r, class: 'handle-dot' }, g);
           const s = r * 0.5;
-          el('path', { d: `M${-s} 0H${s}M0 ${-s}V${s}`, class: 'handle-plus', 'stroke-width': 2 / Math.max(0.55, Math.min(1.4, z)) }, g);
+          el('path', { d: `M${-s} 0H${s}M0 ${-s}V${s}`, class: 'handle-plus', 'stroke-width': 2 * T / Math.max(0.55, Math.min(1.4, z)) }, g);
           const t = el('title', null, g);
           t.textContent = act.label;
         }

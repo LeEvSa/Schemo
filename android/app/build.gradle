@@ -1,0 +1,74 @@
+apply plugin: 'com.android.application'
+
+// Version de Schémo : celle de package.json (4.2.0 → nom « 4.2 », code 40200)
+def schemoVersion = new groovy.json.JsonSlurper().parse(file('../../package.json')).version
+def schemoParts = schemoVersion.tokenize('.').collect { it.toInteger() }
+
+// Clé de signature : hors du dépôt (~/.schemo/keystore.properties : storeFile, storePassword, keyAlias, keyPassword)
+def keyProps = new Properties()
+def keyFile = new File(System.getProperty('user.home'), '.schemo/keystore.properties')
+if (keyFile.exists()) keyFile.withInputStream { keyProps.load(it) }
+
+android {
+    namespace = "ca.leevsa.schemo"
+    compileSdk = rootProject.ext.compileSdkVersion
+    signingConfigs {
+        release {
+            if (keyProps['storeFile']) {
+                storeFile new File(keyFile.parentFile, keyProps['storeFile'])
+                storePassword keyProps['storePassword']
+                keyAlias keyProps['keyAlias']
+                keyPassword keyProps['keyPassword']
+            }
+        }
+    }
+    defaultConfig {
+        applicationId "ca.leevsa.schemo"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode schemoParts[0] * 10000 + schemoParts[1] * 100 + (schemoParts.size() > 2 ? schemoParts[2] : 0)
+        versionName schemoVersion.replaceAll(/\.0$/, '')
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildTypes {
+        release {
+            if (keyProps['storeFile']) signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

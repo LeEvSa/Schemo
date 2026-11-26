@@ -82,8 +82,8 @@ export function buildSVG(L, tab, measure, opts = {}) {
   return { svg: '<?xml version="1.0" encoding="UTF-8"?>\n' + str, w, h };
 }
 
-// SVG → PNG (base64) via un canevas.
-export function svgToPngBase64(svgStr, w, h, scale) {
+// SVG → PNG (base64) via un canevas. opts : { type: 'image/jpeg', quality, background } (PDF sur Android).
+export function svgToPngBase64(svgStr, w, h, scale, opts = {}) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
@@ -96,10 +96,11 @@ export function svgToPngBase64(svgStr, w, h, scale) {
         c.width = Math.max(1, Math.round(w * s));
         c.height = Math.max(1, Math.round(h * s));
         const ctx = c.getContext('2d');
+        if (opts.background) { ctx.fillStyle = opts.background; ctx.fillRect(0, 0, c.width, c.height); }
         ctx.scale(s, s);
         ctx.drawImage(img, 0, 0, w, h);
         URL.revokeObjectURL(url);
-        resolve(c.toDataURL('image/png').split(',')[1]);
+        resolve(c.toDataURL(opts.type || 'image/png', opts.quality).split(',')[1]);
       } catch (err) { reject(err); }
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(tr('Impossible de produire l’image.'))); };

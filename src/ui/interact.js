@@ -12,6 +12,11 @@ export class Interact {
     this.state = null;
     this.space = false;
     this.hoverTimer = null;
+    // tactile : doigts posés (pinch), appui long, double-toucher
+    this.touches = new Map();
+    this.pointerType = 'mouse';
+    this.longTimer = null;
+    this.lastTap = null;
     const svg = this.svg;
     svg.addEventListener('pointerdown', (e) => this.down(e));
     window.addEventListener('pointermove', (e) => this.move(e));
@@ -31,12 +36,53 @@ export class Interact {
 
   world(e) { return this.rd.toWorld(e.clientX, e.clientY); }
 
+  setPointerType(type) {
+    this.pointerType = type;
+    const touch = type === 'touch';
+    if (this.rd.touch !== touch) { this.rd.touch = touch; this.rd.requestFrame(); }
+  }
+
+  // Abandonne le geste en cours (un 2e doigt se pose) : rien n'est modifié.
+  cancelState() {
+    clearTimeout(this.longTimer);
+    const s = this.state;
+    this.state = null;
+    if (!s) return;
+    if (s.kind === 'drag') { this.rd.drag = null; this.rd.dropTarget = null; }
+    if (s.kind === 'link') this.rd.link = null;
+    if (s.kind === 'marquee') this.rd.marquee = null;
+    this.svg.classList.remove('panning', 'linking', 'dragging');
+    this.rd.requestFrame();
+  }
+
+  pinchInfo() {
+    const [a, b] = [...this.touches.values()];
+    return { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, d: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)) };
+  }
+
   down(e) {
     const app = this.app;
+    this.setPointerType(e.pointerType || 'mouse');
+    if (e.pointerType === 'touch') {
+      this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (this.touches.size === 2) {
+        // deux doigts : pincer pour zoomer, glisser pour se déplacer
+        this.cancelState();
+        this.lastTap = null;
+        this.state = { kind: 'pinch', ...this.pinchInfo() };
+        return;
+      }
+      if (this.touches.size > 2) return;
+    }
     closeMenu();
     if (app.editor.active) app.editor.commit();
     const t = e.target;
-    const base = { x0: e.clientX, y0: e.clientY, w0: this.world(e) };
+    const base = { x0: e.clientX, y0: e.clientY, w0: this.world(e), pid: e.pointerId, target: t };
+    if (e.pointerType === 'touch') {
+      // appui long = menu du clic droit
+      clearTimeout(this.longTimer);
+      this.longTimer = setTimeout(() => this.longPress(), 520);
+    }
     if (e.button === 1 || (e.button === 0 && this.space)) {
       e.preventDefault();
       this.state = { ...base, kind: 'pan', lx: e.clientX, ly: e.clientY };
@@ -52,7 +98,7 @@ export class Interact {
     if (pin) { e.preventDefault(); app.unpin([pin.getAttribute('data-pin')]); this.state = { kind: 'none' }; return; }
     const tog = t.closest('.gtoggle');
     if (tog) { e.preventDefault(); app.toggleCollapse(tog.getAttribute('data-toggle')); this.state = { kind: 'none' }; return; }
-    const multi = e.ctrlKey || e.metaKey || e.shiftKey;
+    const multi = e.ctrlKey || e.metaKey || e.shiftKey || app.multiMode;
     const nodeEl = t.closest('.node');
     if (nodeEl) {
       const id = nodeEl.getAttribute('data-id');
@@ -81,9 +127,20 @@ export class Interact {
   }
 
   move(e) {
+    if (e.pointerType === 'touch' && this.touches.has(e.pointerId)) this.touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const s = this.state;
     if (!s || s.kind === 'none') return;
-    const far = Math.hypot(e.clientX - s.x0, e.clientY - s.y0) > 4;
+    if (s.kind === 'pinch') {
+      if (this.touches.size < 2) return;
+      const p = this.pinchInfo();
+      this.rd.panBy(p.cx - s.cx, p.cy - s.cy);
+      this.rd.zoomAt(p.cx, p.cy, p.d / s.d);
+      Object.assign(s, p);
+      return;
+    }
+    if (s.pid != null && e.pointerId !== s.pid) return;
+    const far = Math.hypot(e.clientX - s.x0, e.clientY - s.y0) > (e.pointerType === 'touch' ? 10 : 4);
+    if (far) clearTimeout(this.longTimer);
     switch (s.kind) {
       case 'pending-bg':
         if (far) { s.kind = 'pan'; s.lx = s.x0; s.ly = s.y0; this.svg.classList.add('panning'); this.move(e); }
@@ -180,14 +237,31 @@ export class Interact {
   }
 
   up(e) {
+    if (e.pointerType === 'touch') this.touches.delete(e.pointerId);
+    const s0 = this.state;
+    if (s0 && s0.kind === 'pinch') {
+      // un doigt se lève : l'autre continue de déplacer la vue
+      const rest = [...this.touches.entries()][0];
+      this.state = rest ? { kind: 'pan', pid: rest[0], x0: rest[1].x, y0: rest[1].y, lx: rest[1].x, ly: rest[1].y } : null;
+      return;
+    }
+    if (s0 && s0.pid != null && e.pointerId !== s0.pid) return;
+    clearTimeout(this.longTimer);
     const s = this.state;
     this.state = null;
     if (!s) return;
     const app = this.app;
     this.svg.classList.remove('panning', 'linking', 'dragging');
+    // double-toucher = double-clic
+    let doubleTap = false;
+    if (e.pointerType === 'touch' && (s.kind === 'pending-bg' || s.kind === 'pending-node')) {
+      const now = performance.now(), lt = this.lastTap;
+      doubleTap = !!lt && now - lt.t < 380 && Math.hypot(e.clientX - lt.x, e.clientY - lt.y) < 30;
+      this.lastTap = doubleTap ? null : { t: now, x: e.clientX, y: e.clientY };
+    }
     switch (s.kind) {
       case 'pending-bg':
-        app.clearSelection();
+        if (!doubleTap) app.clearSelection();
         break;
       case 'pending-handle':
         app.handleAction(s.node, s.side);
@@ -229,10 +303,22 @@ export class Interact {
       default: break;
     }
     this.rd.requestFrame();
+    if (doubleTap) this.dbl({ target: s.target, clientX: e.clientX, clientY: e.clientY, fromTouch: true });
+  }
+
+  longPress() {
+    const s = this.state;
+    if (!s || !['pending-bg', 'pending-node'].includes(s.kind)) return;
+    this.state = { kind: 'none', pid: s.pid };
+    this.lastTap = null;
+    if (navigator.vibrate) try { navigator.vibrate(12); } catch { /* sans vibreur */ }
+    this.context({ target: s.target, clientX: s.x0, clientY: s.y0, preventDefault() {}, fromTouch: true });
   }
 
   dbl(e) {
     const app = this.app;
+    // au doigt, le double-toucher est géré dans up() (le navigateur peut aussi envoyer un dblclick)
+    if (this.pointerType === 'touch' && !e.fromTouch) return;
     const t = e.target;
     if (t.closest('.handle') || t.closest('.npin') || t.closest('.gtoggle') || t.closest('.tl-date')) return;
     const nodeEl = t.closest('.node');
@@ -259,6 +345,7 @@ export class Interact {
 
   context(e) {
     e.preventDefault();
+    if (this.pointerType === 'touch' && !e.fromTouch) return; // appui long géré par longPress()
     const app = this.app;
     if (app.editor.active) app.editor.commit();
     const t = e.target;
@@ -277,6 +364,7 @@ export class Interact {
   }
 
   hover(e) {
+    if (e.pointerType === 'touch') return; // au doigt, les + suivent la sélection
     if (this.state && this.state.kind !== 'none') return;
     const t = e.target;
     if (t.closest('.handle')) { clearTimeout(this.hoverTimer); return; }

@@ -1,7 +1,11 @@
-// Accès au système (fichiers, presse-papiers…) : Electron si présent, sinon navigateur (tests).
+// Accès au système (fichiers, presse-papiers…) : Electron, Android (src/android.js) ou navigateur (tests).
 import { tr } from './i18n.js';
-const api = typeof window !== 'undefined' ? window.schemo : null;
-export const isDesktop = !!api;
+import { androidApi, isAndroid } from './android.js';
+const electron = typeof window !== 'undefined' ? window.schemo || null : null;
+const api = electron || androidApi(); // même interface des deux côtés
+export const isDesktop = !!electron; // plusieurs fenêtres, menus propres à Windows
+export { isAndroid };
+export const hasFiles = !!api; // fichiers ouverts / enregistrés à leur place (pas de téléchargement)
 
 let memClip = '';
 
@@ -32,10 +36,14 @@ export const io = {
   },
   async readFile(path) { return api ? api.readFile(path) : null; },
   // plusieurs fenêtres (application seulement)
-  setFile(path) { if (api) api.setFile(path || null); },
-  async newWindow() { if (api) return api.newWindow(); },
-  async focusFile(path) { return api && path ? api.focusFile(path) : false; },
-  async openInNewWindow() { if (api) return api.openInNewWindow(); },
+  setFile(path) { if (electron) electron.setFile(path || null); },
+  async newWindow() { if (electron) return electron.newWindow(); },
+  async focusFile(path) { return electron && path ? electron.focusFile(path) : false; },
+  async openInNewWindow() { if (electron) return electron.openInNewWindow(); },
+  // nom à montrer pour un chemin (Android : adresse content://)
+  displayName(p) { return api && api.displayName ? api.displayName(p) : String(p).split(/[\\/]/).pop(); },
+  onBack(cb) { if (api && api.onBack) api.onBack(cb); },
+  onPause(cb) { if (api && api.onPause) api.onPause(cb); },
   async save(path, content) {
     if (api) return api.save(path, content);
     download(path || 'diagramme.schemo', content, 'application/json');
@@ -68,20 +76,18 @@ export const io = {
     if (api) return api.recoveryClear();
     try { localStorage.removeItem('schemo-recovery'); } catch { /* sans stockage */ }
   },
-  setDirty(d) { if (api) api.setDirty(d); },
-  setTitle(t) { document.title = t; if (api) api.setTitle(t); },
-  onRequestClose(cb) { if (api) api.onRequestClose(cb); },
+  setDirty(d) { if (electron) electron.setDirty(d); },
+  setTitle(t) { document.title = t; if (electron) electron.setTitle(t); },
+  onRequestClose(cb) { if (electron) electron.onRequestClose(cb); },
   closeConfirmed() { if (api) api.closeConfirmed(); },
   onOpenFile(cb) { if (api && api.onOpenFile) api.onOpenFile(cb); },
   async startupFile() { return api ? api.startupFile() : null; },
   async clipboardWrite(text) {
     memClip = text;
-    if (api) return api.clipboardWrite(text);
-    try { await navigator.clipboard.writeText(text); } catch { /* interne seulement */ }
+    try { return api ? await api.clipboardWrite(text) : await navigator.clipboard.writeText(text); } catch { /* interne seulement */ }
   },
   async clipboardRead() {
-    if (api) return api.clipboardRead();
-    try { return await navigator.clipboard.readText(); } catch { return memClip; }
+    try { return api ? await api.clipboardRead() : await navigator.clipboard.readText(); } catch { return memClip; }
   },
   async updateSupported() { return api ? api.updateSupported() : false; },
   async updateCheck(auto) { return api ? api.updateCheck(auto) : null; },

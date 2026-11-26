@@ -26,6 +26,14 @@ cliquer **Informations complémentaires → Exécuter quand même**.
 
 Pour une clé USB ou un PC où tu ne veux rien installer : `Schemo.exe`, la version portable. Elle démarre plus lentement (elle se décompresse à chaque lancement), **ne s'épingle pas** à la barre des tâches (Windows épinglerait son dossier temporaire, qui disparaît) et ne se met pas à jour toute seule.
 
+### Android (téléphone et tablette)
+
+Télécharger `Schemo.apk` dans les [Releases](https://github.com/LeEvSa/Schemo/releases) depuis le téléphone et l'ouvrir. La première fois, Android demande d'autoriser ton navigateur (ou ton gestionnaire de fichiers) à installer des applications : autoriser, puis installer. Schémo n'est pas sur le Play Store.
+
+- **Fichiers :** Fichier → Ouvrir et Enregistrer passent par le sélecteur de fichiers d'Android. Les `.schemo` passent du PC au téléphone comme tu veux (Google Drive, câble, Syncthing…). Les exports (PNG, SVG, PDF) s'enregistrent de la même façon.
+- **Mises à jour :** au lancement, Schémo regarde sur GitHub. S'il y a une nouvelle version, il la télécharge et Android te demande de l'installer (la première fois, autorise Schémo à installer des applications).
+- **Au doigt :** toucher = sélectionner (les **+** apparaissent autour de la case), double-toucher = écrire dans la case ou en créer une sur le fond, appui long = le menu de la case, de la flèche ou du cadre, glisser une case = l'épingler, glisser le fond = se déplacer, pincer = zoom. Pour choisir plusieurs cases : appui long → Sélectionner plusieurs. Sur un téléphone, le panneau des propriétés s'ouvre par le bas (bouton aux curseurs) et le bouton ⋮ contient l'export, le mode sombre, la langue, le zoom et l'aide. Le bouton retour d'Android ferme ce qui est ouvert, un niveau à la fois.
+
 ## Utiliser
 
 | Geste | Effet |
@@ -58,10 +66,12 @@ npm install
 npm test              # tests du moteur de disposition (node)
 npm start             # compile et lance (il faut un écran)
 npm run dist          # fabrique dist/Schemo-Setup.exe et dist/Schemo.exe (portable) depuis Linux
+npm run android       # fabrique dist/Schemo.apk (il faut l'Android SDK, un JDK 21 HotSpot et une clé de signature)
 ```
 
 Structure : `src/layout/` (moteur de rangement), `src/render/` (dessin SVG, flèches, thèmes, export),
-`src/ui/` (panneau, onglets, souris, édition), `src/app.js` (contrôleur), `electron/` (fenêtre, fichiers, PDF).
+`src/ui/` (panneau, onglets, souris, tactile, édition), `src/app.js` (contrôleur), `electron/` (fenêtre, fichiers, PDF),
+`android/` (projet Capacitor ; `src/android.js` est le côté Android de `src/io.js`).
 Voir `CLAUDE.md` pour les détails techniques.
 
 ## Langue / Language

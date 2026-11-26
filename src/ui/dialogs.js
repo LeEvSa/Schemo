@@ -49,6 +49,7 @@ export function stickyToast(msg) {
 }
 
 let openMenu = null;
+export const menuOpen = () => !!openMenu;
 
 export function closeMenu() {
   if (openMenu) { openMenu.remove(); openMenu = null; document.removeEventListener('pointerdown', outside, true); document.removeEventListener('keydown', menuKey, true); }
@@ -75,13 +76,28 @@ function buildMenu(items, isSub) {
     if (it.submenu) {
       const sub = buildMenu(it.submenu, true);
       row.appendChild(sub);
-      row.addEventListener('pointerenter', () => {
+      const open = () => {
+        if (sub.style.display === 'block') return;
         sub.style.display = 'block';
         const r = sub.getBoundingClientRect();
-        if (r.right > window.innerWidth - 4) { sub.style.left = 'auto'; sub.style.right = '100%'; }
-        if (r.bottom > window.innerHeight - 4) sub.style.top = Math.max(-r.top + 4, window.innerHeight - 4 - r.bottom) + 'px';
+        if (r.right > window.innerWidth - 4) {
+          // pas de place à droite : à gauche, ou par-dessus le menu sur un petit écran
+          sub.style.left = 'auto'; sub.style.right = '100%';
+          if (sub.getBoundingClientRect().left < 4) { sub.style.left = sub.style.right = sub.style.top = ''; sub.classList.add('centered'); return; }
+        }
+        const r2 = sub.getBoundingClientRect();
+        if (r2.bottom > window.innerHeight - 4) sub.style.top = Math.max(-r2.top + 4, -6 - (r2.bottom - window.innerHeight + 4)) + 'px';
+      };
+      row.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') open(); });
+      row.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch') sub.style.display = 'none'; });
+      // au doigt : toucher la ligne ouvre (ou ferme) son sous-menu
+      row.addEventListener('click', (e) => {
+        if (sub.contains(e.target)) return;
+        e.stopPropagation();
+        if (sub.style.display === 'block') { sub.style.display = 'none'; return; }
+        for (const other of m.querySelectorAll(':scope > .menu-item > .menu.sub')) other.style.display = 'none';
+        open();
       });
-      row.addEventListener('pointerleave', () => { sub.style.display = 'none'; });
     } else if (!it.disabled) {
       row.addEventListener('click', (e) => { e.stopPropagation(); closeMenu(); it.action && it.action(); });
     }

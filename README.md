@@ -24,6 +24,14 @@ click **More info → Run anyway**.
 
 For a USB key or a PC where you don't want to install anything: `Schemo.exe`, the portable version. It starts more slowly (it unpacks itself at every launch), **can't be pinned** to the taskbar (Windows would pin its temporary folder, which disappears) and doesn't update itself.
 
+### Android (phone and tablet)
+
+Download `Schemo.apk` from the [Releases](https://github.com/LeEvSa/Schemo/releases) on your phone and open it. The first time, Android asks you to allow your browser (or file manager) to install apps: allow it, then install. Schémo is not on the Play Store.
+
+- **Files:** File → Open and Save use Android's own file picker. Copy your `.schemo` files between the PC and the phone however you like (Google Drive, cable, Syncthing…). Exports (PNG, SVG, PDF) are saved the same way.
+- **Updates:** when Schémo starts, it checks GitHub. If a new version exists, it downloads it and Android asks you to install it (the first time, allow Schémo to install apps).
+- **With your finger:** tap = select (the **+** appear around the box), double-tap = write in the box or create one on the background, long press = the menu of the box, arrow or frame, drag a box = pin it, drag the background = move, pinch = zoom. To select several boxes: long press → Select several. On a phone, the properties panel opens from the bottom (button with sliders) and the ⋮ button holds export, dark mode, language, zoom and help. The Android back button closes what is open, one level at a time.
+
 ## Use
 
 | Gesture | Effect |
@@ -96,10 +104,12 @@ npm install
 npm test              # layout engine tests (node)
 npm start             # builds and runs (needs a display)
 npm run dist          # builds dist/Schemo-Setup.exe and dist/Schemo.exe (portable) from Linux
+npm run android       # builds dist/Schemo.apk (needs the Android SDK, a HotSpot JDK 21 and a signing key)
 ```
 
 Structure: `src/layout/` (layout engine), `src/render/` (SVG drawing, arrows, themes, export),
-`src/ui/` (panel, tabs, mouse, editing), `src/app.js` (controller), `electron/` (window, files, PDF).
+`src/ui/` (panel, tabs, mouse, touch, editing), `src/app.js` (controller), `electron/` (window, files, PDF),
+`android/` (Capacitor project; `src/android.js` is the Android side of `src/io.js`).
 See `CLAUDE.md` for technical details (in French).
 
 ## Updates

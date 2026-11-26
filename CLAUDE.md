@@ -31,6 +31,11 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   `SCHEMO_TEST_DIR` supprime les boîtes de dialogue (enregistrement/export écrits dans ce dossier) ;
   `visual.mjs` donne un `userData` temporaire (sinon la sauvegarde de secours d'un test précédent bloque le démarrage).
   `window.__schemo` = l'objet App (accès pour les tests).
+- `npm run android` (= `scripts/package-android.mjs`, 2026-11-26) : fabrique `dist/Schemo.apk` (build prod → `npx cap sync android` → Gradle `assembleRelease`).
+  Il faut `ANDROID_HOME` (SDK, plateforme 36), `JAVA_HOME` = un JDK 21 **HotSpot** (OpenJ9 plante dans Gradle/R8) et la clé hors du dépôt
+  `~/.schemo/keystore.properties` (lue par `android/app/build.gradle`). Version de l'APK = `package.json` (5.1.0 → nom 5.1, code 50100).
+  L'APK va dans chaque release avec le Setup (même numéro) ; la mise à jour Android cherche `Schemo.apk` dans la dernière release.
+  Icônes et écrans de démarrage : `npm run android-icons` (depuis `assets/icon.svg`).
 - L'exe ne démarre pas sous wine 10 (Electron 45) : impossible de le tester ici, le code est le même que sous Linux.
 - `Schemo-Setup.exe` propose `%LOCALAPPDATA%\Programs\schemo` (dossier modifiable) et crée le raccourci « Schémo » du menu Démarrer ; celui du Bureau est une case décochée au dernier écran (`assets/installer.nsh`, langues français et anglais). À relancer pour mettre à jour. Le portable se décompresse dans
   un dossier temporaire à chaque lancement : Windows ne peut pas l'épingler. `main.cjs` fixe `setAppUserModelId` à la valeur de `appId` pour que la fenêtre se range sous le raccourci.
@@ -91,6 +96,17 @@ un commit n'oblige pas à publier un Setup. Pour chaque mise à jour : `npm run 
   maison `ui/colorpicker.js` (2026-11-07, celui de Chromium ouvre toujours en RGB) : HEX par défaut, mode (`colorMode`) et
   couleurs récentes (`recentColors`) gardés dans `prefs.json`. `panel.pickColor` : tout le passage dans le sélecteur = une
   seule étape d'annulation ; Échap revient à la couleur de départ.
+- Android (2026-11-26) : projet Capacitor 8 dans `android/` (`webDir` = `app/`). `src/io.js` choisit Electron (`window.schemo`), Android
+  (`src/android.js`, même interface) ou le navigateur ; `isDesktop` = Electron seulement, `hasFiles` = Electron ou Android.
+  Greffon natif `android/.../SchemoPlugin.java` (appelé par `Capacitor.Plugins.Schemo`, pas de `@capacitor/core` dans le paquet) :
+  sélecteur de documents (`open`, `create` puis `write` : le contenu ne passe jamais par le sélecteur, limite d'~1 Mo d'Android),
+  adresses `content://` gardées comme `filePath` (`io.displayName` pour le nom), fichier reçu par « Ouvrir avec », téléchargement de l'APK
+  puis installateur d'Android (FileProvider du cache). Préférences et sauvegarde de secours : `localStorage`. PDF sans Electron :
+  `render/pdf.js` (pages JPEG). Bouton retour : `app.back()` (menu → sélecteur de couleur → fenêtre → édition → tiroir → sélection → quitter).
+- Tactile (`ui/interact.js`, 2026-11-26) : doigts suivis par `pointerId` ; deux doigts = pincer (`pinch`), appui long 520 ms = `context()`,
+  double-toucher détecté dans `up()` (les `dblclick` / `contextmenu` du navigateur sont ignorés au doigt), seuil de glisser 10 px.
+  `renderer.touch` grossit les « + ». `app.multiMode` (appui long → Sélectionner plusieurs) remplace Maj. Petit écran (< 700 px, CSS) :
+  panneau en tiroir (`body.panel-open`, bouton `#btn-panel`), menu ⋮ (`app.moreMenu`), `.phone-only` / `.desk-only`.
 - `electron/main.cjs` : un seul processus (verrou) mais plusieurs fenêtres (2026-11-17) : `wins` (webContents.id → état : `dirty`, `filePath`,
   `recoveryId`…) ; relancer = nouvelle fenêtre, ou montre celle qui a déjà le fichier (`windowWithFile`). Fichiers `.schemo` (JSON), PDF par
   `printToPDF` d'une fenêtre cachée, sauvegarde de secours par fenêtre `recuperation/<id>.json` dans userData (l'ancien `recuperation.json`

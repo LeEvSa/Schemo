@@ -12,14 +12,15 @@ import { buildSVG, svgToPngBase64 } from './render/export.js';
 import { THEMES, SWATCHES, CANVAS } from './render/themes.js';
 import { handleActions, frameHandles } from './ui/handles.js';
 import { h, icon } from './ui/dom.js';
-import { showModal, toast, stickyToast, showMenu } from './ui/dialogs.js';
+import { showModal, toast, stickyToast, showMenu, closeMenu, menuOpen } from './ui/dialogs.js';
+import { closeColorPicker, colorPickerOpen } from './ui/colorpicker.js';
 import { Panel, SHAPE_LABELS, LAYOUT_LABELS, MARKDOWN_HELP } from './ui/panel.js';
 import { TabBar } from './ui/tabs.js';
 import { Minimap } from './ui/minimap.js';
 import { Interact } from './ui/interact.js';
 import { Editor } from './ui/editor.js';
 import { exampleDoc } from './examples.js';
-import { io, isDesktop } from './io.js';
+import { io, isDesktop, isAndroid, hasFiles } from './io.js';
 
 const VERSION = __VERSION__; // fourni par scripts/build.mjs
 
@@ -67,6 +68,9 @@ class App {
     new ResizeObserver(() => { this.renderer.requestFrame(); this.minimap.invalidate(); }).observe(this.$.stage);
     io.onRequestClose(async () => { if (await this.confirmDiscard()) { await io.recoveryClear(); io.closeConfirmed(); } });
     io.onOpenFile((p) => this.openPath(p));
+    io.onBack(() => this.back());
+    io.onPause(() => this.autosave());
+    if (isAndroid) document.documentElement.classList.add('android');
     io.onUpdateProgress((p) => { if (this.updateToast) this.updateToast.set(tr('Téléchargement de la mise à jour : {n} %', { n: p })); });
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.applyMode());
     window.addEventListener('beforeunload', (e) => { if (!isDesktop && this.dirty) { e.preventDefault(); e.returnValue = ''; } });
@@ -847,6 +851,32 @@ class App {
   }
 
   // ---------- fichiers ----------
+  // Au doigt (pas de Maj ni de Ctrl) : un mode où toucher une case l'ajoute à la sélection et glisser le fond l'entoure.
+  setMultiMode(on) {
+    this.multiMode = !!on;
+    if (this.multiChip) { this.multiChip.remove(); this.multiChip = null; }
+    if (on) {
+      this.multiChip = h('div', { class: 'multi-chip' },
+        h('span', null, tr('Sélection multiple : touche les cases, ou glisse pour les entourer')),
+        h('button', { class: 'btn small primary', onclick: () => this.setMultiMode(false) }, tr('Terminer')));
+      this.$.stage.appendChild(this.multiChip);
+    }
+  }
+
+  // Bouton retour d'Android : ferme ce qui est ouvert, un niveau à la fois ; à la fin, quitte Schémo.
+  async back() {
+    if (this.backBusy) return;
+    if (this.multiMode) { this.setMultiMode(false); return; }
+    if (menuOpen()) { closeMenu(); return; }
+    if (colorPickerOpen()) { closeColorPicker(); return; }
+    if (document.querySelector('.modal-wrap')) { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return; }
+    if (this.editor.active) { this.editor.commit(); return; }
+    if (document.body.classList.contains('panel-open')) { this.togglePanel(false); return; }
+    if (this.sel.size) { this.clearSelection(); return; }
+    this.backBusy = true;
+    try { if (await this.confirmDiscard()) { await io.recoveryClear(); io.closeConfirmed(); } } finally { this.backBusy = false; }
+  }
+
   async confirmDiscard() {
     if (this.editor.active) this.editor.commit();
     if (!this.dirty) return true;
@@ -905,7 +935,7 @@ class App {
   loadContent(content, path, name) {
     try {
       const raw = JSON.parse(content);
-      const nm = name || (path ? path.split(/[\\/]/).pop() : tr('Sans titre'));
+      const nm = name || (path ? io.displayName(path) : tr('Sans titre'));
       this.loadDoc(raw, path || null, nm.replace(/\.schemo$/i, ''));
       io.recoveryClear();
     } catch (err) {
@@ -915,7 +945,7 @@ class App {
 
   async save() {
     if (this.editor.active) this.editor.commit();
-    if (!this.filePath && isDesktop) return this.saveAs();
+    if (!this.filePath && hasFiles) return this.saveAs();
     try {
       this.tab.view = { ...this.renderer.cam };
       const p = await io.save(this.filePath || (this.fileName + '.schemo'), serializeDoc(this.doc));
@@ -937,8 +967,8 @@ class App {
   }
 
   afterSave(p) {
-    if (isDesktop) this.filePath = p;
-    this.fileName = String(p).split(/[\\/]/).pop().replace(/\.schemo$/i, '');
+    if (hasFiles) this.filePath = p;
+    this.fileName = io.displayName(p).replace(/\.schemo$/i, '');
     this.setDirty(false);
     this.updateTitle();
     io.recoveryClear();
@@ -981,7 +1011,9 @@ class App {
     }
     const now = await showModal({
       title: tr('Mise à jour prête'),
-      body: tr('Schémo va se fermer, s’installer, puis se rouvrir. Si tu choisis plus tard, elle s’installera à la fermeture de Schémo.'),
+      body: isAndroid
+        ? tr('Android va te demander d’installer la mise à jour (la première fois, autorise Schémo à installer des applications). Schémo se fermera pendant l’installation.')
+        : tr('Schémo va se fermer, s’installer, puis se rouvrir. Si tu choisis plus tard, elle s’installera à la fermeture de Schémo.'),
       buttons: [{ label: tr('Plus tard'), value: false }, { label: tr('Installer maintenant'), value: true, kind: 'primary' }],
     });
     if (now && await this.confirmDiscard()) {
@@ -1121,8 +1153,8 @@ class App {
     this.$.empty.replaceChildren(
       h('div', { class: 'empty-card' },
         h('div', { class: 'empty-art', html: EMPTY_ART }),
-        h('h3', null, tr('Double-clique n’importe où pour créer une case')),
-        h('p', null, tr('Ensuite, clique sur les petits '), h('b', null, '+'), tr(' autour d’une case pour en ajouter d’autres, ou tire une flèche d’un '), h('b', null, '+'), tr(' vers une autre case. Schémo range tout seul : boucle → cercle, arbre → hiérarchie, chaîne → processus.')),
+        h('h3', null, TOUCH ? tr('Touche deux fois n’importe où pour créer une case') : tr('Double-clique n’importe où pour créer une case')),
+        h('p', null, TOUCH ? tr('Ensuite, touche les petits ') : tr('Ensuite, clique sur les petits '), h('b', null, '+'), tr(' autour d’une case pour en ajouter d’autres, ou tire une flèche d’un '), h('b', null, '+'), tr(' vers une autre case. Schémo range tout seul : boucle → cercle, arbre → hiérarchie, chaîne → processus.')),
         h('div', { class: 'empty-actions' },
           h('button', { class: 'btn primary', onclick: () => this.addNodeCenter() }, icon('addBox', 16), tr('Créer une case')),
           h('button', { class: 'btn', onclick: () => this.openExample() }, icon('sparkle', 16), tr('Voir les exemples')))));
@@ -1194,18 +1226,44 @@ class App {
         layoutBtn),
       h('div', { class: 'tb-flex' }),
       h('div', { class: 'tb-group search' }, icon('search', 16), searchInput, searchCount),
-      h('div', { class: 'tb-group' },
+      h('div', { class: 'tb-group desk-only' },
         btn('zoomOut', tr('Zoom arrière (Ctrl+-)'), () => this.renderer.zoomCenter(1 / 1.2)),
         h('button', { class: 'zoom-label', id: 'zoom-label', title: tr('Revenir à 100 %'), onclick: () => this.zoomReset() }, '100 %'),
         btn('zoomIn', tr('Zoom avant (Ctrl+=)'), () => this.renderer.zoomCenter(1.2)),
         btn('fit', tr('Ajuster à l’écran (Ctrl+0)'), () => this.renderer.fit(true))),
       h('div', { class: 'tb-sep' }),
-      h('div', { class: 'tb-group' },
+      h('div', { class: 'tb-group desk-only' },
         btn('export', tr('Exporter (Ctrl+E)'), () => this.exportDialog()),
         btn('moon', tr('Mode sombre'), () => this.toggleMode(), { id: 'btn-mode' }),
         h('button', { class: 'tool-btn lang-btn', id: 'btn-lang', title: tr('Changer de langue (français / anglais)'), onclick: (e) => this.languageMenu(e.currentTarget) }, icon('globe'), h('span', null, getLang().toUpperCase())),
         btn('help', tr('Aide (F1)'), () => this.showHelp())),
+      // petit écran (téléphone) : le panneau devient un tiroir, le reste passe dans « Plus »
+      h('div', { class: 'tb-group phone-only' },
+        btn('fit', tr('Ajuster à l’écran (Ctrl+0)'), () => this.renderer.fit(true)),
+        btn('sliders', tr('Propriétés'), () => this.togglePanel(), { id: 'btn-panel' }),
+        h('button', { class: 'icon-btn', title: tr('Plus'), 'aria-label': tr('Plus'), onclick: (e) => this.moreMenu(e.currentTarget) }, icon('more'))),
     );
+  }
+
+  togglePanel(open) {
+    const on = open === undefined ? !document.body.classList.contains('panel-open') : !!open;
+    document.body.classList.toggle('panel-open', on);
+    const b = document.getElementById('btn-panel');
+    if (b) b.classList.toggle('on', on);
+  }
+
+  moreMenu(anchor) {
+    const r = anchor.getBoundingClientRect();
+    showMenu([
+      { label: tr('Exporter (PNG, PDF, SVG)…'), icon: 'export', action: () => this.exportDialog() },
+      { label: tr('Mode sombre'), icon: 'moon', checked: document.documentElement.dataset.theme === 'dark', action: () => this.toggleMode() },
+      { label: 'Langue · Language', icon: 'globe', submenu: LANGS.map(([l, label]) => ({ label, checked: getLang() === l, action: () => this.setLanguage(l) })) },
+      { sep: true },
+      { label: tr('Zoom avant'), icon: 'zoomIn', action: () => this.renderer.zoomCenter(1.2) },
+      { label: tr('Zoom arrière'), icon: 'zoomOut', action: () => this.renderer.zoomCenter(1 / 1.2) },
+      { sep: true },
+      { label: tr('Aide et raccourcis'), icon: 'help', action: () => this.showHelp() },
+    ], r.right, r.bottom + 4, { alignRight: true });
   }
 
   refreshLayoutButton() {
@@ -1247,6 +1305,15 @@ class App {
         row(tr('Maj + glisser le fond'), tr('Sélectionner plusieurs cases')),
         row(tr('Molette'), tr('Zoom')),
         row(tr('Clic droit'), tr('Menu de la case, de la flèche ou du cadre'))),
+      h('h4', null, tr('Au doigt')),
+      h('table', { class: 'keys' },
+        row(tr('Toucher'), tr('Sélectionner (les + apparaissent autour de la case)')),
+        row(tr('Double-toucher'), tr('Écrire dans la case, ou nouvelle case sur le fond')),
+        row(tr('Appui long'), tr('Menu de la case, de la flèche ou du cadre (comme le clic droit)')),
+        row(tr('Glisser une case'), tr('L’épingle à cet endroit')),
+        row(tr('Glisser le fond'), tr('Déplacer la vue')),
+        row(tr('Pincer'), tr('Zoom')),
+        row(tr('Appui long → Sélectionner plusieurs'), tr('Choisir plusieurs cases (par exemple pour les mettre dans un cadre)'))),
       h('h4', null, tr('Au clavier')),
       h('table', { class: 'keys' },
         row(tr('F2 ou Entrée'), tr('Écrire dans la case sélectionnée')),
@@ -1287,6 +1354,7 @@ class App {
         n.pin ? { label: tr('Relâcher la punaise'), icon: 'unpin', action: () => this.unpin(ids) } : { label: tr('Épingler ici'), icon: 'pin', action: () => this.pinHere(ids) },
         { sep: true },
         { label: tr('Mettre dans un nouveau cadre'), icon: 'frame', shortcut: 'Ctrl+G', action: () => this.groupSelection() },
+        this.interact.pointerType === 'touch' ? { label: tr('Sélectionner plusieurs'), icon: 'check', action: () => this.setMultiMode(true) } : null,
         n.group ? { label: tr('Sortir du cadre'), icon: 'ungroup', action: () => this.removeFromGroup(ids) } : null,
         { sep: true },
         { label: tr('Copier'), icon: 'copy', shortcut: 'Ctrl+C', action: () => this.copySelection() },
@@ -1327,6 +1395,7 @@ class App {
         { label: tr('Nouvelle case ici'), icon: 'addBox', action: () => this.addNodeAt(world) },
         { label: tr('Coller'), icon: 'paste', shortcut: 'Ctrl+V', action: () => this.paste() },
         { label: tr('Tout sélectionner'), shortcut: 'Ctrl+A', action: () => this.selectAll() },
+        this.interact.pointerType === 'touch' ? { label: tr('Sélectionner plusieurs'), icon: 'check', action: () => this.setMultiMode(true) } : null,
         { sep: true },
         { label: tr('Forme de l’onglet'), icon: 'sparkle', submenu: LAYOUT_SHAPES.map((s) => ({ label: LAYOUT_LABELS[s], checked: t.settings.shape === s, action: () => this.setTabSettings({ shape: s }) })) },
         { label: tr('Ajuster à l’écran'), icon: 'fit', shortcut: 'Ctrl+0', action: () => this.renderer.fit(true) },
@@ -1335,6 +1404,9 @@ class App {
     }
   }
 }
+
+// écran tactile sans souris (téléphone, tablette)
+const TOUCH = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
 
 export const LAYOUT_ICONS = { auto: 'sparkle', cycle: 'cycle', hierarchy: 'hierarchy', process: 'process', list: 'list', pyramid: 'pyramid', radial: 'radial', timeline: 'timeline', threads: 'threads', network: 'network', arc: 'arc', board: 'board', family: 'family', target: 'target', parallel: 'parallel', inherit: 'sparkle' };
 

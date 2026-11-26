@@ -3,6 +3,20 @@
 Each update is named **week.number**: `3.2` is the 2nd update of week 3.
 Weeks are 7-day periods counted from the day Schémo was created (week 1 = October 29 to November 4, 2026).
 
+## 5.1 (2026-11-26)
+- **Android version** for phones and tablets: `Schemo.apk`, made from the same code as the Windows version and with the same number.
+  - Files go through Android's file picker (open, save, export PNG, SVG and PDF).
+  - Schémo checks GitHub for updates when it starts, downloads the new APK and asks Android to install it.
+- **Touch gestures** (Android and touch screens):
+  - tap selects, double-tap writes in a box or creates one, long press opens the menu;
+  - drag a box to pin it, drag the background to move, pinch to zoom;
+  - long press → Select several, to pick several boxes without a keyboard.
+  - The **+** are bigger for fingers, and submenus open with a tap.
+- **Small screens:**
+  - the properties panel becomes a drawer that opens from the bottom;
+  - export, dark mode, language, zoom and help move to a ⋮ menu;
+  - menus and their submenus fit on the screen.
+
 ## 3.11 (2026-11-17)
 - **Several windows at once.** Relaunching Schémo, File → New window (Ctrl+Shift+N) or double-clicking a `.schemo` file opens a new window. File → Open in new window… keeps the current diagram where it is. A file already open in a window is never opened twice: Schémo shows that window instead.
 - Work saved for recovery is kept per window: after a crash, each unsaved diagram comes back in its own window.
